@@ -22,19 +22,28 @@ Judgement:
 '''
     return prompt
 
-def eval_func_xverify(item, llm):
+
+async def eval_func_xverify_async(item, llm):
+    """Async xVerify evaluation using the LLM.
+
+    Expects `llm.inference` to be async and return a dict
+    with a "response" key.
+    """
     try:
-        prompt = format_prompt(item['query'], item['response'], item['gt'])
-        response = llm.inference({"query": prompt})['response']
-        valid_label = ['correct', 'incorrect']
-        
+        prompt = format_prompt(item["query"], item["response"], item["gt"])
+        llm_output = await llm.inference({"query": prompt})
+        response = llm_output.get("response")
+        valid_label = ["correct", "incorrect"]
+
         if isinstance(response, str):
             item_label = response.strip().lower()
-            if item_label in valid_label:
-                if item_label == "correct":
-                    return item_label, 1
+            # Allow simple bracketed variants like "[correct]"
+            normalized = item_label.strip("[]")
+            if normalized in valid_label:
+                if normalized == "correct":
+                    return normalized, 1
                 else:
-                    return item_label, 0
+                    return normalized, 0
             else:
                 return f"Eval Error: {item_label}", None
         else:

@@ -1,0 +1,17 @@
+# methods/cot/configs/config_mcp.yaml
+
+# New logical agent configuration
+logical_agents:
+  default:
+    # Optional but recommended: make instructions explicit
+    instructions: >
+      You are a helpful chain-of-thought reasoner. Use the reasoning-graph
+      MCP tools when helpful to structure your thinking.
+    mcp_servers: ["reasoning-graph"]
+
+# MCP server configuration
+mcp_servers:
+  reasoning-graph:
+    type: "stdio"
+    command: "uvx"
+    args: ["git+https://github.com/debatelab/cedrus"]

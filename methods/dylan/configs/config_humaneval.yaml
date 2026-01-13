@@ -16,3 +16,62 @@ judge_roles:
 num_rounds: 3
 activation: "listwise"
 qtype: "code_completion"
+
+# Logical agent configuration for DyLAN HumanEval
+logical_agents:
+  # Agent roles
+  dylan_humaneval_PythonAssistant:
+    instructions: >
+      You are a PythonAssistant DyLAN agent for HumanEval, focusing on
+      writing correct Python function implementations.
+    mcp_servers: []
+
+  dylan_humaneval_AlgorithmDeveloper:
+    instructions: >
+      You are an AlgorithmDeveloper DyLAN agent for HumanEval, focusing
+      on efficient and correct algorithm design.
+    mcp_servers: []
+
+  dylan_humaneval_ComputerScientist:
+    instructions: >
+      You are a ComputerScientist DyLAN agent for HumanEval, focusing on
+      correctness, complexity, and edge cases.
+    mcp_servers: []
+
+  dylan_humaneval_Programmer:
+    instructions: >
+      You are a Programmer DyLAN agent for HumanEval, implementing
+      robust and readable Python solutions.
+    mcp_servers: []
+
+  # Judge roles
+  dylan_humaneval_Tester:
+    instructions: >
+      You are the Tester judge in DyLAN HumanEval. You design unit
+      tests to validate candidate implementations.
+    mcp_servers: []
+
+  dylan_humaneval_Reflector:
+    instructions: >
+      You are the Reflector judge in DyLAN HumanEval. You reflect on
+      multiple implementations, analyzing correctness, efficiency, and
+      corner cases.
+    mcp_servers: []
+
+  dylan_humaneval_Debugger:
+    instructions: >
+      You are the Debugger judge in DyLAN HumanEval. You identify and
+      explain bugs in implementations and suggest fixes.
+    mcp_servers: []
+
+  dylan_humaneval_QualityManager:
+    instructions: >
+      You are the QualityManager judge in DyLAN HumanEval. You review
+      code quality, style, and maintainability.
+    mcp_servers: []
+
+  dylan_humaneval_ranker:
+    instructions: >
+      You are a DyLAN HumanEval ranker. Given reflections and reviews,
+      you rank or select top implementations according to the prompt.
+    mcp_servers: []

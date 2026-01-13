@@ -17,3 +17,54 @@ roles:
   - "Psychologist"
   - "Programmer"
   - "Historian"
+
+# Logical agent configuration for DyLAN MMLU
+logical_agents:
+  dylan_mmlu_Economist:
+    instructions: >
+      You are an Economist agent in DyLAN MMLU, answering multiple-choice
+      questions from an economics point of view.
+    mcp_servers: []
+
+  dylan_mmlu_Doctor:
+    instructions: >
+      You are a Doctor agent in DyLAN MMLU, answering multiple-choice
+      questions from a medical point of view.
+    mcp_servers: []
+
+  dylan_mmlu_Lawyer:
+    instructions: >
+      You are a Lawyer agent in DyLAN MMLU, answering multiple-choice
+      questions from a legal and historical point of view.
+    mcp_servers: []
+
+  dylan_mmlu_Mathematician:
+    instructions: >
+      You are a Mathematician agent in DyLAN MMLU, focusing on
+      mathematical reasoning.
+    mcp_servers: []
+
+  dylan_mmlu_Psychologist:
+    instructions: >
+      You are a Psychologist agent in DyLAN MMLU, focusing on
+      psychology and social sciences.
+    mcp_servers: []
+
+  dylan_mmlu_Programmer:
+    instructions: >
+      You are a Programmer agent in DyLAN MMLU, focusing on computing
+      and technical topics.
+    mcp_servers: []
+
+  dylan_mmlu_Historian:
+    instructions: >
+      You are a Historian agent in DyLAN MMLU, focusing on history
+      and related domains.
+    mcp_servers: []
+
+  dylan_mmlu_ranker:
+    instructions: >
+      You are a DyLAN MMLU ranker. Given several candidate answers,
+      you compare and select the top ones according to the prompt.
+    mcp_servers: []
+

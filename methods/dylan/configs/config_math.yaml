@@ -10,5 +10,19 @@ agents: 4
 # - complex: Use more complex math examples with step-by-step reasoning
 mode: "complex"
 
+# Logical agent configuration for DyLAN Math
+logical_agents:
+  dylan_math_agent:
+    instructions: >
+      You are a DyLAN math agent participating in a multi-round debate.
+      Follow the given examples, reason step by step, and produce a
+      single, well-justified final numeric answer when possible.
+    mcp_servers: []
 
+  dylan_math_ranker:
+    instructions: >
+      You are a DyLAN math ranker. Given several candidate math
+      solutions, you compare them and select the top ones as
+      requested in the prompt.
+    mcp_servers: []
 

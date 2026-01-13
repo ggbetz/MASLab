@@ -1,0 +1,22 @@
+[project]
+name = "maslab"
+version = "0.1.0"
+description = "Add your description here"
+readme = "README.md"
+requires-python = ">=3.9"
+dependencies = [
+    "openai>=2.15.0",
+    "openai-agents>=0.6.5",
+    "psutil>=7.2.1",
+    "pyyaml>=6.0.3",
+    "sacrebleu>=2.6.0",
+    "tenacity>=9.1.2",
+    "termcolor>=3.1.0",
+    "wikipedia-api>=0.8.1",
+]
+
+[dependency-groups]
+dev = [
+    "mypy>=1.19.1",
+    "pyright>=1.1.408",
+]

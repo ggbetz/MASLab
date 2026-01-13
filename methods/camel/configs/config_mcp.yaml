@@ -19,14 +19,17 @@ logical_agents:
     role: "user"
     # Optional model override; otherwise MAS uses general_config["model_name"]
     # model_name: "kit.gpt-oss-120b"
-    mcp_servers: []
+    mcp_servers:
+      - "reasoning-graph"
 
   camel_assistant:
     role: "assistant"
     # model_name: "kit.gpt-oss-120b"
-    mcp_servers: []
+    mcp_servers:
+      - "reasoning-graph"
 
   camel_critic:
     role: "critic"
     # model_name: "kit.gpt-oss-120b"
-    mcp_servers: []
+    mcp_servers:
+      - "reasoning-graph"

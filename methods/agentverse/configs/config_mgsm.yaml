@@ -1,3 +1,21 @@
 cnt_agents: 2
 max_turn: 3
 max_criticizing_rounds: 3
+
+# Per-logical-agent configuration for AgentVerse MGSM
+logical_agents:
+  agentverse_mgsm_assigner:
+    role: "assigner"
+    mcp_servers: []
+
+  agentverse_mgsm_solver:
+    role: "solver"
+    mcp_servers: []
+
+  agentverse_mgsm_critic:
+    role: "critic"
+    mcp_servers: []
+
+  agentverse_mgsm_evaluator:
+    role: "evaluator"
+    mcp_servers: []

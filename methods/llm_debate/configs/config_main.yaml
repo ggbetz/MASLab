@@ -1,2 +1,21 @@
+# Legacy configuration (still supported)
 agents_num: 3
 rounds_num: 2
+
+# New logical agent configuration
+logical_agents:
+  debater_0:
+    instructions: "You are debater_0 in a multi-agent debate. Carefully analyze the question and provide your initial answer. You have access to a filesystem to read additional context if needed. Make sure to state your answer clearly at the end of your response."
+    mcp_servers: ["reasoning-graph"]
+  debater_1:
+    instructions: "You are debater_1 in a multi-agent debate. Carefully analyze the question and provide your initial answer. Consider different perspectives and make sure to state your answer clearly at the end of your response."
+  debater_2:
+    instructions: "You are debater_2 in a multi-agent debate. Act as a moderator and critical evaluator. You have access to a filesystem to verify claims and gather additional information. Analyze the question thoroughly, identify potential biases, and provide a well-reasoned answer. Make sure to state your answer clearly at the end of your response."
+    mcp_servers: ["reasoning-graph"]
+
+# MCP server configuration
+mcp_servers:
+  reasoning-graph:
+    type: "stdio"
+    command: "uvx"
+    args: ["git+https://github.com/debatelab/cedrus"]
