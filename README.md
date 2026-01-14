@@ -2,6 +2,10 @@
 
 ![MASLab](./assets/maslab_figure.png)
 
+> [!NOTE]
+> This fork adds support for MCP servers and async inference 
+
+
 ## Key Features
 - **Comprehensive:** MASLab integrates over 20 LLM-based MAS methods (since March 2023)
 - **Unified:** MASLab unified data pre-processing and evaluation protocols to ensure fair comparisons.
@@ -25,24 +29,32 @@
 
 2. To see if the codebase is executable (e.g., vanilla, cot, agentverse)
 ```
-python inference.py --method_name <method_name> --debug
+uv run python inference.py --method_name <method_name> --debug
 ```
 
 3. To inference on a dataset
 ```
 # Step 1: build the test dataset
-python datasets/build_test_dataset.py --dataset_name <dataset_name>
+uv run python datasets/build_test_dataset.py --dataset_name <dataset_name>
 
-# Step 2 (Sequential): Inference on the whole dataset
-python inference.py --method_name <method_name> --test_dataset_name <dataset_name> --sequential
-
-# Or Step 2 (Parallel): Inference on the whole dataset
-python inference.py --method_name <method_name> --test_dataset_name <dataset_name>
+# Step 2: inference on the whole dataset
+uv run python inference.py \
+  --test_dataset_name <dataset_name> \
+  --method_name <inference_method_name> \
+  --method_config_name <config_filenamebase> \
+  --model_api_config <path_to_api_config> \
+  --model_name <inference_model_name> \
 ```
 
 4. To evaluate
 ```
-python evaluate.py --eval_protocol <eval_protocol> --tested_dataset_name <tested_dataset_name> --tested_method_name <tested_method_name> --tested_mas_model_name <tested_mas_model_name>
+uv run python evaluate.py \
+  --tested_dataset_name <dataset_name> \
+  --tested_method_name <inference_method_name> \
+  --tested_method_config_name <config_filenamebase> \
+  --tested_mas_model_name <inference_model_name> \
+  --model_name <verifier_model_name> \
+  --model_api_config <path_to_api_config> \
 ```
 
 ## Citation
