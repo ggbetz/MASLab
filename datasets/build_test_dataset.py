@@ -337,7 +337,7 @@ elif args.dataset_name == "AIME-2024":
 
 elif args.dataset_name == "AIME-2025":
     load_dataset_path = (
-        args.dataset_path if args.dataset_path else "yentinglin/aime_2025"
+        args.dataset_path if args.dataset_path else "MathArena/aime_2025"
     )
     dataset = load_dataset(load_dataset_path, split="train", trust_remote_code=True)
     print(f"{'=' * 50}\n", dataset)
