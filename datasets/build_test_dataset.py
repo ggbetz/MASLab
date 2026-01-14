@@ -2,6 +2,7 @@ import argparse
 import json
 import os
 import random
+from typing import Any, cast
 
 from datasets import load_dataset
 
@@ -54,7 +55,7 @@ if args.dataset_name == "MATH":
             ],
             "source": args.dataset_name,
         }
-        for example in dataset
+        for example in cast(Any, dataset)
     ]
     data_list = shuffle_and_sample(data_list, args.num2sample)
 
@@ -72,7 +73,7 @@ elif args.dataset_name == "GSM8K":
             "tag": ["math"],
             "source": "GSM8K",
         }
-        for example in dataset
+        for example in cast(Any, dataset)
     ]
     data_list = shuffle_and_sample(data_list, args.num2sample)
 
@@ -98,7 +99,7 @@ elif args.dataset_name == "AQUA-RAT":
             "tag": ["math", "reasoning", "multiple-choice"],
             "source": "AQUA-RAT",
         }
-        for example in dataset
+        for example in cast(Any, dataset)
     ]
     data_list = shuffle_and_sample(data_list, args.num2sample)
 
@@ -139,7 +140,7 @@ elif args.dataset_name == "MedMCQA":
             "tag": ["medical", example["subject_name"], example["topic_name"]],
             "source": "MedMCQA",
         }
-        for example in filtered_dataset
+        for example in cast(Any, filtered_dataset)
     ]
     data_list = shuffle_and_sample(data_list, args.num2sample)
 
@@ -167,7 +168,7 @@ elif args.dataset_name == "MedQA":
             "tag": ["medical"],
             "source": "MedQA",
         }
-        for example in dataset
+        for example in cast(Any, dataset)
     ]
     data_list = shuffle_and_sample(data_list, args.num2sample)
 
@@ -202,7 +203,7 @@ Choose the correct answer from the following options:
             "tag": ["mmlu", example["subject"]],
             "source": "MMLU",
         }
-        for example in dataset
+        for example in cast(Any, dataset)
     ]
     data_list = shuffle_and_sample(data_list, args.num2sample)
 
@@ -213,7 +214,7 @@ elif args.dataset_name == "MMLU-Pro":
     print(f"{'=' * 50}\n", dataset)
     option_list = ["A", "B", "C", "D", "E", "F", "G", "H", "I", "J"]
 
-    def format_mmlu_query(example):
+    def format_mmlu_pro_query(example):
         query = "The following is a multiple-choice question:\n"
         query += example["question"]
         query += "\n\nChoose the correct answer from the following options:"
@@ -227,13 +228,13 @@ elif args.dataset_name == "MMLU-Pro":
 
     data_list = [
         {
-            "query": format_mmlu_query(example),
+            "query": format_mmlu_pro_query(example),
             "gt": format_mmlu_gt(example),
             "tag": ["MMLU-Pro", example["category"], example["src"]],
             "source": "MMLU-Pro",
             "num_choices": len(example["options"]),
         }
-        for example in dataset
+        for example in cast(Any, dataset)
     ]
     data_list = shuffle_and_sample(data_list, args.num2sample)  # 1001, 2004
 
@@ -251,7 +252,7 @@ elif args.dataset_name == "GSM-Hard":
             "tag": ["math", "GSM-Hard"],
             "source": "GSM-Hard",
         }
-        for example in dataset
+        for example in cast(Any, dataset)
     ]
     data_list = shuffle_and_sample(data_list, args.num2sample)
 
@@ -293,7 +294,7 @@ elif args.dataset_name.startswith("GPQA"):
             ],
             "source": args.dataset_name,
         }
-        for example in dataset
+        for example in cast(Any, dataset)
     ]
     data_list = shuffle_and_sample(data_list, args.num2sample)
 
@@ -314,7 +315,7 @@ elif args.dataset_name == "SciBench":
             "tag": [args.dataset_name, "science", example["source"]],
             "source": args.dataset_name,
         }
-        for example in dataset
+        for example in cast(Any, dataset)
     ]
     data_list = shuffle_and_sample(data_list, args.num2sample)
 
@@ -331,7 +332,7 @@ elif args.dataset_name == "AIME-2024":
             "tag": [args.dataset_name, "math"],
             "source": args.dataset_name,
         }
-        for example in dataset
+        for example in cast(Any, dataset)
     ]
     data_list = shuffle_and_sample(data_list, args.num2sample)
 
@@ -348,7 +349,7 @@ elif args.dataset_name == "AIME-2025":
             "tag": [args.dataset_name, "math"],
             "source": args.dataset_name,
         }
-        for example in dataset
+        for example in cast(Any, dataset)
     ]
     data_list = shuffle_and_sample(data_list, args.num2sample)
 
@@ -365,7 +366,7 @@ elif args.dataset_name == "APEX-SHORTLIST":
             "tag": [args.dataset_name, "math"],
             "source": args.dataset_name,
         }
-        for example in dataset
+        for example in cast(Any, dataset)
     ]
     data_list = shuffle_and_sample(data_list, args.num2sample)
 
