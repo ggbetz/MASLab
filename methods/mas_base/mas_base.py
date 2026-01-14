@@ -2,12 +2,21 @@ import asyncio
 import os
 
 # OpenAI Agents SDK imports
-from agents import Agent, ModelSettings, OpenAIChatCompletionsModel, RunConfig, Runner
+from agents import (
+    Agent,
+    ModelSettings,
+    OpenAIChatCompletionsModel,
+    RunConfig,
+    Runner,
+    set_trace_processors,
+)
 from agents.mcp import MCPServerStdio
 from openai import AsyncOpenAI
 from tenacity import retry, stop_after_attempt, wait_exponential
 
 from methods.utils import handle_retry_error, load_config
+
+set_trace_processors([])  # disable OpenAI tracing
 
 
 class MAS:
@@ -60,6 +69,9 @@ class MAS:
 
         # Flag to track if MCP servers have been started
         self._mcp_servers_started = False
+
+        # Lock used to serialize MCP server startup in async code paths
+        self._mcp_start_lock = None
 
     async def inference(self, sample):
         """Default async inference: simple single-call helper.
@@ -140,11 +152,8 @@ class MAS:
         # method configuration, but it will NOT start them yet.
         agent = self._get_or_create_logical_agent(agent_id, effective_model_name)
 
-        # Ensure MCP servers are started before using agents. In the async
-        # path we can await the startup directly.
-        if not self._mcp_servers_started and self._mcp_servers:
-            await self._start_mcp_servers()
-            self._mcp_servers_started = True
+        # Ensure MCP servers are started before using agents.
+        await self._ensure_mcp_servers_started()
 
         model_settings = ModelSettings(temperature=effective_temperature)
         run_config = RunConfig(model_settings=model_settings)
@@ -315,6 +324,25 @@ class MAS:
 
         return servers
 
+    async def _ensure_mcp_servers_started(self):
+        """Ensure MCP servers are started exactly once, in a serialized way."""
+        # Fast path: already started or no servers configured
+        if self._mcp_servers_started or not self._mcp_servers:
+            return
+
+        # Lazily create the lock the first time we need it, so we only
+        # construct it when an event loop is running.
+        if self._mcp_start_lock is None:
+            self._mcp_start_lock = asyncio.Lock()
+
+        async with self._mcp_start_lock:
+            # Double-check inside the lock in case another task started them
+            if self._mcp_servers_started or not self._mcp_servers:
+                return
+
+            await self._start_mcp_servers()
+            self._mcp_servers_started = True
+
     async def _start_mcp_servers(self):
         """Start all MCP servers that have been created.
 
@@ -352,9 +380,7 @@ class MAS:
         the event loop. MCP servers will be connected using the current
         loop and cleaned up on exit.
         """
-        if not self._mcp_servers_started and self._mcp_servers:
-            await self._start_mcp_servers()
-            self._mcp_servers_started = True
+        await self._ensure_mcp_servers_started()
         return self
 
     async def __aexit__(self, exc_type, exc_val, exc_tb):
@@ -385,9 +411,7 @@ class MAS:
         return self.token_stats
 
     def optimizing(self, val_data):
-        """
-        For methods that requires validation data such as GPTSwarm and ADAS
-        """
+        """For methods that requires validation data such as GPTSwarm and ADAS"""
         pass
 
     def retrieve_memory(self):

@@ -18,7 +18,7 @@
 ## Get Started
 
 1. Specify your model configs in `./model_api_configs/model_api_config.json`:
-```
+```json
 "gpt-4o-mini-2024-07-18": {
         "model_list": [
             {"model_name": "gpt-4o-mini-2024-07-18", "model_url": "http://a.b.c.d:e/v1", "api_key": "xyz"}
@@ -28,12 +28,12 @@
 ```
 
 2. To see if the codebase is executable (e.g., vanilla, cot, agentverse)
-```
+```bash
 uv run python inference.py --method_name <method_name> --debug
 ```
 
 3. To inference on a dataset
-```
+```bash
 # Step 1: build the test dataset
 uv run python datasets/build_test_dataset.py --dataset_name <dataset_name>
 
@@ -46,8 +46,10 @@ uv run python inference.py \
   --model_name <inference_model_name> \
 ```
 
+Results will be stored in `results/{dataset_name}/{inference_model_name}/{inference_method_name}_infer.jsonl`.
+
 4. To evaluate
-```
+```bash
 uv run python evaluate.py \
   --tested_dataset_name <dataset_name> \
   --tested_method_name <inference_method_name> \

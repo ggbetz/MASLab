@@ -1,6 +1,5 @@
 import argparse
 import asyncio
-import concurrent.futures
 import json
 import os
 import threading
@@ -126,10 +125,15 @@ def add(a: int, b: int) -> int:
                 val_dataset = json.load(f)
 
         # get output path
+        file_name = (
+            f"{args.method_name}_{args.method_config_name}_infer.jsonl"
+            if args.method_config_name
+            else f"{args.method_name}_infer.jsonl"
+        )
         output_path = (
             args.output_path
             if args.output_path is not None
-            else f"./results/{args.test_dataset_name}/{args.model_name}/{args.method_name}_infer.jsonl"
+            else f"./results/{args.test_dataset_name}/{args.model_name}/{file_name}"
         )
         os.makedirs(os.path.dirname(output_path), exist_ok=True)
 
