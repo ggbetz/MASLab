@@ -4,6 +4,7 @@ import json
 import os
 import threading
 import traceback
+import uuid
 
 from tqdm import tqdm
 
@@ -11,11 +12,23 @@ from methods import get_method_class
 from utils import load_model_api_config, reserve_unprocessed_queries, write_to_jsonl
 
 
-async def run_sample(mas, sample, output_path, lock):
-    """Run a single sample using an async MAS instance."""
+async def run_sample(mas, sample, output_path, lock, sem=None):
+    """Run a single sample using an async MAS instance.
+
+    If a semaphore is provided, limit concurrent execution using it.
+    """
     save_data = sample.copy()
+    sample_uid = uuid.uuid4().hex
     try:
-        mas_output = await mas.inference(sample)
+        if sem is not None:
+            async with sem:
+                async with mas.sample_context(sample_uid):
+                    mas_output = await mas.inference(sample)
+        else:
+            async with mas.sample_context(sample_uid):
+                mas_output = await mas.inference(sample)
+        # TODO
+        # Maybe we can tell mas to shut down all mcp servers associated with this sample / sample_uid, freeing up resources?
         if "response" not in mas_output:
             raise ValueError(
                 f"The key 'response' is not found in the MAS output: {mas_output}"
@@ -77,6 +90,12 @@ async def main_async():
 
     parser.add_argument("--debug", action="store_true")
     parser.add_argument("--sequential", action="store_true")
+    parser.add_argument(
+        "--max_concurrent_samples",
+        type=int,
+        default=10,
+        help="Maximum number of samples processed concurrently (ignored if --sequential is set).",
+    )
     args = parser.parse_args()
 
     general_config = vars(args)
@@ -104,7 +123,9 @@ def add(a: int, b: int) -> int:
         async with MAS_METHOD(
             general_config, method_config_name=args.method_config_name
         ) as mas:
-            response = await mas.inference(sample)
+            sample_uid = uuid.uuid4().hex
+            async with mas.sample_context(sample_uid):
+                response = await mas.inference(sample)
             print(json.dumps(response, indent=4))
             print(f"\n>> Token stats: {json.dumps(mas.get_token_stats(), indent=4)}")
     else:
@@ -155,8 +176,9 @@ def add(a: int, b: int) -> int:
                 for sample in test_dataset:
                     await run_sample(mas, sample, output_path, lock)
             else:
+                sem = asyncio.Semaphore(args.max_concurrent_samples)
                 tasks = [
-                    run_sample(mas, sample, output_path, lock)
+                    run_sample(mas, sample, output_path, lock, sem)
                     for sample in test_dataset
                 ]
                 for coro in tqdm(
