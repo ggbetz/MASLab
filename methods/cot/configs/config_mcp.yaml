@@ -13,5 +13,5 @@ logical_agents:
 mcp_servers:
   reasoning-graph:
     type: "stdio"
-    command: "uvx"
-    args: ["git+https://github.com/debatelab/cedrus"]
+    command: ".venv-cedrus/bin/python"
+    args: ["-m", "cedrus"]

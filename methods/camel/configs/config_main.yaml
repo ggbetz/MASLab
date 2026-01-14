@@ -9,9 +9,8 @@ critic_role: Professor
 mcp_servers:
   reasoning-graph:
     type: "stdio"
-    command: "uvx"
-    args:
-      - "git+https://github.com/debatelab/cedrus"
+    command: ".venv-cedrus/bin/python"
+    args: ["-m", "cedrus"]
 
 # Per-logical-agent configuration for CAMEL roles
 logical_agents:

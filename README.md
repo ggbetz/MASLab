@@ -68,3 +68,32 @@ uv run python evaluate.py \
   year={2025}
 }
 ```
+
+
+# TODO
+
+Avoid repeated git+install on every connection:
+
+   Right now every MCP server start is spawning `uvx` with `git+https://github.com/debatelab/cedrus`, so `uv` may re‑sync the repo each time.
+
+   More robust options:
+
+   - Pre‑install cedrus once (e.g., in your environment) and change the MCP config to call its installed entrypoint instead of `uvx git+...`. For example, after installing:
+
+     ```sh
+     uv pip install 'git+https://github.com/debatelab/cedrus'
+     ```
+
+     update `methods/cot/configs/config_mcp.yaml` to something like:
+
+     ```yaml
+     mcp_servers:
+       reasoning-graph:
+         type: "stdio"
+         command: "cedrus-mcp"  # or whatever the installed binary is called
+         args: []
+     ```
+
+     (Check the cedrus docs for the actual command name.)
+
+   - Alternatively, pin to a specific version or local path and ensure `uvx` doesn’t need to re‑resolve dependencies every time.

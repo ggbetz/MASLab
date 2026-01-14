@@ -66,6 +66,7 @@ class MAS:
         # primary model endpoint. For now we simply use the first endpoint
         # for self.model_name.
         primary_cfg = self.model_api_config[self.model_name]["model_list"][0]
+
         primary_base_url = primary_cfg["model_url"]
         primary_api_key = primary_cfg["api_key"]
 
@@ -74,40 +75,6 @@ class MAS:
         print(f"[DEBUG] Using model: {self.model_name}")
 
         self.client = AsyncOpenAI(base_url=primary_base_url, api_key=primary_api_key)
-
-        # Flag to track if any MCP servers have been started
-        self._mcp_servers_started = False
-
-        # Track which MCP server instances have been started
-        self._started_mcp_servers: set[object] = set()
-
-        # Lock used to serialize MCP server startup in async code paths
-        self._mcp_start_lock = None
-
-    class _SampleContext:
-        """Async context manager that sets the current sample UID.
-
-        This encapsulates the ContextVar token handling so callers can use
-        `async with mas.sample_context(uid)` without worrying about
-        resetting the variable.
-        """
-
-        def __init__(self, sample_uid: str | None):
-            self._sample_uid = sample_uid
-            self._token = None
-
-        async def __aenter__(self):
-            self._token = _current_sample_uid.set(self._sample_uid)
-            return self._sample_uid
-
-        async def __aexit__(self, exc_type, exc_val, exc_tb):
-            if self._token is not None:
-                _current_sample_uid.reset(self._token)
-
-    def sample_context(self, sample_uid: str | None):
-        """Return an async context manager for the given sample UID."""
-
-        return MAS._SampleContext(sample_uid)
 
     async def inference(self, sample):
         """Default async inference: simple single-call helper.
@@ -200,9 +167,6 @@ class MAS:
             agent_id, effective_model_name, sample_uid=sample_uid
         )
 
-        # Ensure MCP servers are started before using agents.
-        await self._ensure_mcp_servers_started()
-
         model_settings = ModelSettings(temperature=effective_temperature)
         run_config = RunConfig(model_settings=model_settings)
 
@@ -291,7 +255,7 @@ class MAS:
 
             if mcp_server_names:
                 try:
-                    mcp_servers = self._get_or_create_mcp_servers(
+                    mcp_servers = self._get_mcp_servers(
                         agent_id, sample_uid, mcp_server_names
                     )
                 except Exception as e:
@@ -314,6 +278,125 @@ class MAS:
             self._logical_agents[cache_key] = agent
 
         return self._logical_agents[cache_key]
+
+    async def _connect_mcp_servers_for_sample(self, sample_uid: str | None) -> None:
+        """Start and register all MCP servers for the given sample UID.
+
+        This method iterates through all MCP servers associated with the
+        sample_uid and starts them. Called from SampleContext.__aenter__.
+        """
+        if sample_uid is None:
+            return
+        # Look up all servers for this sample_uid and connect them if
+        # needed. We do not maintain a separate "started" set; we assume
+        # that connecting twice is either a no-op or guarded by the
+        # underlying implementation.
+        for agent_id, per_agent in self._mcp_servers.items():
+            per_sample = per_agent.get(sample_uid)
+            if not per_sample:
+                continue
+            for server_name, server in per_sample.items():
+                if hasattr(server, "connect"):
+                    try:
+                        await server.connect()
+                        print(
+                            f"Started MCP server: {server_name} "
+                            f"(agent_id={agent_id}, sample_uid={sample_uid})"
+                        )
+                    except Exception as e:
+                        print(
+                            f"Failed to start MCP server {server_name} "
+                            f"(agent_id={agent_id}, sample_uid={sample_uid}): {e}"
+                        )
+
+    async def _cleanup_mcp_servers_for_sample(self, sample_uid: str | None) -> None:
+        """Shutdown and cleanup all MCP servers for the given sample UID.
+
+        This method stops all MCP servers associated with the sample_uid
+        and removes the corresponding logical agents from cache. Called from
+        SampleContext.__aexit__.
+        """
+        if sample_uid is None:
+            return
+
+        # Stop and remove MCP servers for this sample_uid
+        for agent_id, per_agent in list(self._mcp_servers.items()):
+            if sample_uid not in per_agent:
+                continue
+            per_sample = per_agent[sample_uid]
+            for server_name, server in list(per_sample.items()):
+                if hasattr(server, "cleanup"):
+                    try:
+                        await server.cleanup()
+                        print(
+                            f"Stopped MCP server: {server_name} "
+                            f"(agent_id={agent_id}, sample_uid={sample_uid})"
+                        )
+                    except Exception as e:
+                        print(
+                            f"Error stopping MCP server {server_name} "
+                            f"(agent_id={agent_id}, sample_uid={sample_uid}): {e}"
+                        )
+                per_sample.pop(server_name, None)
+            if not per_sample:
+                per_agent.pop(sample_uid, None)
+            if not per_agent:
+                self._mcp_servers.pop(agent_id, None)
+
+        # Remove any logical agents keyed with this sample_uid
+        keys_to_remove: list[str] = []
+        suffix = f":{sample_uid}"
+        for key in self._logical_agents.keys():
+            if key.endswith(suffix):
+                keys_to_remove.append(key)
+        for key in keys_to_remove:
+            self._logical_agents.pop(key, None)
+
+    class _SampleContext:
+        """Async context manager for per-sample isolation and MCP server lifecycle.
+
+        This context manager ensures proper isolation between different samples
+        by managing MCP servers and routing context. For a given sample_uid:
+
+        Entry (__aenter__):
+        - Sets the ContextVar so call_llm* methods can route to the correct sample
+        - Proactively creates all MCP servers that might be needed for this sample
+        - Starts and connects all MCP servers for this sample
+
+        Exit (__aexit__):
+        - Shuts down all MCP servers associated with this sample
+        - Cleans up resources and resets the context
+        """
+
+        def __init__(self, mas: "MAS", sample_uid: str | None):
+            self._mas = mas
+            self._sample_uid = sample_uid
+            self._token = None
+
+        async def __aenter__(self):
+            # Set the current sample UID for this task
+            self._token = _current_sample_uid.set(self._sample_uid)
+
+            # Proactively create all MCP servers that might be needed for this sample
+            self._mas._create_mcp_servers_for_sample(self._sample_uid)
+
+            # Start and connect all MCP servers for this sample
+            await self._mas._connect_mcp_servers_for_sample(self._sample_uid)
+
+            return self._sample_uid
+
+        async def __aexit__(self, exc_type, exc_val, exc_tb):
+            # Shutdown all MCP servers for this sample
+            try:
+                await self._mas._cleanup_mcp_servers_for_sample(self._sample_uid)
+            finally:
+                if self._token is not None:
+                    _current_sample_uid.reset(self._token)
+
+    def sample_context(self, sample_uid: str | None):
+        """Return an async context manager for the given sample UID."""
+
+        return MAS._SampleContext(self, sample_uid)
 
     def _create_mcp_server(self, server_name, server_config):
         """Create an MCP server instance based on configuration.
@@ -350,150 +433,87 @@ class MAS:
                 f"Unsupported MCP server type: {server_config.get('type')}"
             )
 
-    def _get_or_create_mcp_servers(self, agent_id, sample_uid, server_names):
-        """Get or create MCP servers for a given agent_id and sample_uid.
+    def _get_mcp_servers(self, agent_id, sample_uid, server_names):
+        """Get MCP servers for a given agent_id and sample_uid.
+
 
         Args:
             agent_id: Logical agent identifier
             sample_uid: Sample identifier used to isolate servers
-            server_names: List of MCP server names to create/retrieve
+            server_names: List of MCP server names to retrieve
 
         Returns:
             List of MCP server instances
         """
         servers = []
 
-        if (
-            not hasattr(self, "method_config")
-            or "mcp_servers" not in self.method_config
-        ):
-            return servers
-
         # Get or create nested maps for this agent and sample
         per_agent = self._mcp_servers.setdefault(agent_id, {})
         per_sample = per_agent.setdefault(sample_uid, {})
 
         for server_name in server_names:
-            if server_name not in per_sample:
-                # Get server configuration
-                server_config = self.method_config["mcp_servers"].get(server_name)
-                if not server_config:
-                    raise ValueError(
-                        f"MCP server '{server_name}' not found in configuration"
-                    )
-
-                # Create and cache the server for this agent+sample
-                server = self._create_mcp_server(server_name, server_config)
-                per_sample[server_name] = server
-
-            servers.append(per_sample[server_name])
+            server = per_sample.get(server_name)
+            if server is None:
+                raise ValueError(
+                    f"MCP server '{server_name}' not found for agent '{agent_id}' "
+                    f"and sample '{sample_uid}'. Servers must be created by "
+                    f"SampleContext before agent creation."
+                )
+            servers.append(server)
 
         return servers
 
-    async def _ensure_mcp_servers_started(self):
-        """Ensure MCP servers are started exactly once, in a serialized way."""
-        # Fast path: no servers configured
-        if not self._mcp_servers:
+    def _get_all_mcp_servers_for_sample(
+        self, sample_uid: str | None
+    ) -> dict[str, dict[str, list[str]]]:
+        """Get all MCP servers needed for all agents in the method config.
+
+        Returns:
+            Dict mapping agent_id to list of server_names needed for that agent
+        """
+        agent_servers = {}
+
+        if (
+            not hasattr(self, "method_config")
+            or "logical_agents" not in self.method_config
+        ):
+            return agent_servers
+
+        for agent_id, agent_config in self.method_config["logical_agents"].items():
+            server_names = agent_config.get("mcp_servers", [])
+            if server_names:
+                agent_servers[agent_id] = server_names
+
+        return agent_servers
+
+    def _create_mcp_servers_for_sample(self, sample_uid: str | None) -> None:
+        """Create all MCP servers needed for the given sample.
+
+        This method proactively creates all MCP servers that might be needed
+        by any agent for this sample, based on the method configuration.
+        """
+        if sample_uid is None:
             return
 
-        # Lazily create the lock the first time we need it, so we only
-        # construct it when an event loop is running.
-        if self._mcp_start_lock is None:
-            self._mcp_start_lock = asyncio.Lock()
+        agent_servers = self._get_all_mcp_servers_for_sample(sample_uid)
 
-        async with self._mcp_start_lock:
-            # Double-check inside the lock in case another task started them
-            if not self._mcp_servers:
-                return
+        for agent_id, server_names in agent_servers.items():
+            # Get or create nested maps for this agent and sample
+            per_agent = self._mcp_servers.setdefault(agent_id, {})
+            per_sample = per_agent.setdefault(sample_uid, {})
 
-            await self._start_mcp_servers()
-            self._mcp_servers_started = bool(self._started_mcp_servers)
+            for server_name in server_names:
+                if server_name not in per_sample:
+                    # Get server configuration
+                    server_config = self.method_config["mcp_servers"].get(server_name)
+                    if not server_config:
+                        raise ValueError(
+                            f"MCP server '{server_name}' not found in configuration"
+                        )
 
-    async def _start_mcp_servers(self):
-        """Start all MCP servers that have been created.
-
-        We call the Agents SDK `connect()` coroutine directly rather than
-        using `__aenter__` so that the internal async context managers
-        (e.g., stdio_client) are always entered from the same task that
-        will later call `cleanup()`.
-        """
-        for agent_id, per_agent in self._mcp_servers.items():
-            for sample_uid, per_sample in per_agent.items():
-                for server_name, server in per_sample.items():
-                    if server in self._started_mcp_servers:
-                        continue
-                    if hasattr(server, "connect"):
-                        try:
-                            await server.connect()
-                            self._started_mcp_servers.add(server)
-                            print(
-                                f"Started MCP server: {server_name} "
-                                f"(agent_id={agent_id}, sample_uid={sample_uid})"
-                            )
-                        except Exception as e:
-                            print(
-                                f"Failed to start MCP server {server_name} "
-                                f"(agent_id={agent_id}, sample_uid={sample_uid}): {e}"
-                            )
-
-    async def _stop_mcp_servers(self):
-        """Stop all MCP servers that have been started.
-
-        We use the Agents SDK `cleanup()` coroutine instead of
-        `__aexit__` for the same reason as `_start_mcp_servers`.
-        """
-        for agent_id, per_agent in self._mcp_servers.items():
-            for sample_uid, per_sample in per_agent.items():
-                for server_name, server in per_sample.items():
-                    if server not in self._started_mcp_servers:
-                        continue
-                    if hasattr(server, "cleanup"):
-                        try:
-                            await server.cleanup()
-                            self._started_mcp_servers.discard(server)
-                            print(
-                                f"Stopped MCP server: {server_name} "
-                                f"(agent_id={agent_id}, sample_uid={sample_uid})"
-                            )
-                        except Exception as e:
-                            print(
-                                f"Error stopping MCP server {server_name} "
-                                f"(agent_id={agent_id}, sample_uid={sample_uid}): {e}"
-                            )
-
-    async def __aenter__(self):
-        """Async context manager entry - start MCP servers.
-
-        This path is for advanced async usage where the caller controls
-        the event loop. MCP servers will be connected using the current
-        loop and cleaned up on exit.
-        """
-        await self._ensure_mcp_servers_started()
-        return self
-
-    async def __aexit__(self, exc_type, exc_val, exc_tb):
-        """Async context manager exit - stop MCP servers."""
-        if self._mcp_servers_started and self._mcp_servers:
-            await self._stop_mcp_servers()
-            self._mcp_servers_started = False
-
-    def shutdown_mcp_servers(self):
-        """Synchronously stop all MCP servers if they were started.
-
-        This is intended for synchronous entrypoints like `inference.py`
-        that call `call_llm` directly. It ensures that MCP servers are
-        cleaned up on the same event loop that started them, avoiding
-        anyio stdio_client shutdown warnings.
-        """
-        if not self._mcp_servers_started:
-            return
-        try:
-            loop = asyncio.get_event_loop()
-            if not loop.is_running():
-                loop.run_until_complete(self._stop_mcp_servers())
-                self._mcp_servers_started = False
-        except Exception as e:
-            print(f"Warning: Failed to shutdown MCP servers: {e}")
+                    # Create and cache the server for this agent+sample
+                    server = self._create_mcp_server(server_name, server_config)
+                    per_sample[server_name] = server
 
     def get_token_stats(self):
         return self.token_stats

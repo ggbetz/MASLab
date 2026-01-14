@@ -27,8 +27,6 @@ async def run_sample(mas, sample, output_path, lock, sem=None):
         else:
             async with mas.sample_context(sample_uid):
                 mas_output = await mas.inference(sample)
-        # TODO
-        # Maybe we can tell mas to shut down all mcp servers associated with this sample / sample_uid, freeing up resources?
         if "response" not in mas_output:
             raise ValueError(
                 f"The key 'response' is not found in the MAS output: {mas_output}"
@@ -120,14 +118,12 @@ def add(a: int, b: int) -> int:
                 "query": "If $|x+5|-|3x-6|=0$, find the largest possible value of $x$. Express your answer as an improper fraction."
             }
         MAS_METHOD = get_method_class(args.method_name, args.test_dataset_name)
-        async with MAS_METHOD(
-            general_config, method_config_name=args.method_config_name
-        ) as mas:
-            sample_uid = uuid.uuid4().hex
-            async with mas.sample_context(sample_uid):
-                response = await mas.inference(sample)
-            print(json.dumps(response, indent=4))
-            print(f"\n>> Token stats: {json.dumps(mas.get_token_stats(), indent=4)}")
+        mas = MAS_METHOD(general_config, method_config_name=args.method_config_name)
+        sample_uid = uuid.uuid4().hex
+        async with mas.sample_context(sample_uid):
+            response = await mas.inference(sample)
+        print(json.dumps(response, indent=4))
+        print(f"\n>> Token stats: {json.dumps(mas.get_token_stats(), indent=4)}")
     else:
         print(f">> Method: {args.method_name} | Dataset: {args.test_dataset_name}")
 
@@ -165,28 +161,26 @@ def add(a: int, b: int) -> int:
         MAS_METHOD = get_method_class(args.method_name, args.test_dataset_name)
         lock = threading.Lock()
 
-        async with MAS_METHOD(
-            general_config, method_config_name=args.method_config_name
-        ) as mas:
-            # Optional optimization step
-            if args.require_val and val_dataset is not None:
-                await asyncio.to_thread(mas.optimizing, val_dataset)
+        mas = MAS_METHOD(general_config, method_config_name=args.method_config_name)
+        # Optional optimization step
+        if args.require_val and val_dataset is not None:
+            await asyncio.to_thread(mas.optimizing, val_dataset)
 
-            if args.sequential:
-                for sample in test_dataset:
-                    await run_sample(mas, sample, output_path, lock)
-            else:
-                sem = asyncio.Semaphore(args.max_concurrent_samples)
-                tasks = [
-                    run_sample(mas, sample, output_path, lock, sem)
-                    for sample in test_dataset
-                ]
-                for coro in tqdm(
-                    asyncio.as_completed(tasks),
-                    total=len(tasks),
-                    desc="Processing queries",
-                ):
-                    await coro
+        if args.sequential:
+            for sample in test_dataset:
+                await run_sample(mas, sample, output_path, lock)
+        else:
+            sem = asyncio.Semaphore(args.max_concurrent_samples)
+            tasks = [
+                run_sample(mas, sample, output_path, lock, sem)
+                for sample in test_dataset
+            ]
+            for coro in tqdm(
+                asyncio.as_completed(tasks),
+                total=len(tasks),
+                desc="Processing queries",
+            ):
+                await coro
 
 
 if __name__ == "__main__":
