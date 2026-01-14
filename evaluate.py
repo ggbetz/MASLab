@@ -14,6 +14,7 @@ from utils import (
     reserve_unprocessed_queries,
     write_to_jsonl,
 )
+from inference import build_output_path
 
 
 async def evaluate_sample_async(args, item, save_eval_path, lock=None, llm=None):
@@ -128,20 +129,12 @@ async def main_async():
     LLM_METHOD = get_method_class("vanilla")
 
     # Load evaluation data
-    tested_infer_path = (
-        args.tested_infer_path
-        if args.tested_infer_path is not None
-        else f"./results/{args.tested_dataset_name}/{args.tested_mas_model_name}/{args.tested_method_name}_infer.jsonl"
-    )
-    tested_infer_path = (
-        tested_infer_path.replace(
-            "_infer.jsonl", f"_{args.tested_method_config_name}_infer.jsonl"
-        )
-        if (
-            args.tested_method_config_name is not None
-            and args.tested_infer_path is None
-        )
-        else tested_infer_path
+    tested_infer_path = build_output_path(
+        method_name=args.tested_method_name,
+        method_config_name=args.tested_method_config_name,
+        test_dataset_name=args.tested_dataset_name,
+        model_name=args.tested_mas_model_name,
+        output_path=args.tested_infer_path,
     )
     save_eval_path = tested_infer_path.replace("infer", "xverify_eval")
 

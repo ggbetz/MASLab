@@ -4,7 +4,6 @@ import json
 import os
 import traceback
 import uuid
-
 from asyncio import Lock, Semaphore
 from typing import Any, Dict, Iterable, Optional, Tuple
 
@@ -100,15 +99,23 @@ def load_datasets(
     return test_dataset, val_dataset
 
 
-def build_output_path(args: argparse.Namespace) -> str:
+def build_output_path(
+    method_name: str,
+    method_config_name: Optional[str],
+    test_dataset_name: str,
+    model_name: str,
+    output_path: Optional[str],
+) -> str:
+    if method_config_name is not None:
+        method_config_name = method_config_name.replace("_", "-")
     file_name = (
-        f"{args.method_name}_{args.method_config_name}_infer.jsonl"
-        if args.method_config_name
-        else f"{args.method_name}_infer.jsonl"
+        f"{method_name}_{method_config_name}_infer.jsonl"
+        if method_config_name
+        else f"{method_name}_infer.jsonl"
     )
-    if args.output_path is not None:
-        return args.output_path
-    return f"./results/{args.test_dataset_name}/{args.model_name}/{file_name}"
+    if output_path is not None:
+        return output_path
+    return f"./results/{test_dataset_name}/{model_name}/{file_name}"
 
 
 def create_mas(args: argparse.Namespace, general_config: Dict[str, Any]):
@@ -173,7 +180,13 @@ async def run_full_inference(
 
     test_dataset, val_dataset = load_datasets(args)
 
-    output_path = build_output_path(args)
+    output_path = build_output_path(
+        method_name=args.method_name,
+        method_config_name=args.method_config_name,
+        test_dataset_name=args.test_dataset_name,
+        model_name=args.model_name,
+        output_path=args.output_path,
+    )
     os.makedirs(os.path.dirname(output_path), exist_ok=True)
 
     test_dataset = reserve_unprocessed_queries(output_path, test_dataset)
