@@ -31,7 +31,7 @@ async def evaluate_sample_async(args, item, save_eval_path, lock=None, llm=None)
     if args.debug:
         print(json.dumps(save_data, indent=4))
     else:
-        write_to_jsonl(lock, save_eval_path, save_data)
+        write_to_jsonl(save_eval_path, save_data, lock=lock)
 
 
 async def main_async():

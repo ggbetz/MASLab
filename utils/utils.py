@@ -1,5 +1,6 @@
 import json
 import os
+from typing import Any, Dict, Iterable, Optional
 
 
 def load_model_api_config(model_api_config, model_name):
@@ -13,8 +14,13 @@ def load_model_api_config(model_api_config, model_name):
     return model_api_config
 
 
-def write_to_jsonl(lock, file_name, data):
-    with lock:
+def write_to_jsonl(file_name, data, lock=None):
+    if lock is not None:
+        with lock:
+            with open(file_name, "a") as f:
+                json.dump(data, f)
+                f.write("\n")
+    else:
         with open(file_name, "a") as f:
             json.dump(data, f)
             f.write("\n")
