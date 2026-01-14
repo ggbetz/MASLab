@@ -4,6 +4,8 @@ opencode.json*
 
 datasets/data
 
+experiments
+
 results/*
 
 *nopush*
