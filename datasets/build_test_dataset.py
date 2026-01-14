@@ -352,6 +352,23 @@ elif args.dataset_name == "AIME-2025":
     ]
     data_list = shuffle_and_sample(data_list, args.num2sample)
 
+elif args.dataset_name == "APEX-SHORTLIST":
+    load_dataset_path = (
+        args.dataset_path if args.dataset_path else "MathArena/apex-shortlist"
+    )
+    dataset = load_dataset(load_dataset_path, split="train", trust_remote_code=True)
+    print(f"{'=' * 50}\n", dataset)
+    data_list = [
+        {
+            "query": example["problem"],
+            "gt": example["answer"],
+            "tag": [args.dataset_name, "math"],
+            "source": args.dataset_name,
+        }
+        for example in dataset
+    ]
+    data_list = shuffle_and_sample(data_list, args.num2sample)
+
 
 else:
     raise ValueError(f"Dataset {args.dataset_name} not supported.")
