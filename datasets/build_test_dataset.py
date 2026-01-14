@@ -28,8 +28,8 @@ def deduplicate(data_list):
 
     for item in data_list:
         if item["query"] not in seen_queries:
-            unique_data.append(item)  # 添加第一个出现的样本
-            seen_queries.add(item["query"])  # 标记这个 query 已经出现
+            unique_data.append(item)  # add the first occurrence of this sample
+            seen_queries.add(item["query"])  # mark this query as already seen
     if len(unique_data) < len(data_list):
         print(f">> Duplicate samples removed: {len(data_list) - len(unique_data)}")
     return unique_data
