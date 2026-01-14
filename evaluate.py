@@ -1,20 +1,19 @@
-import os
-import json
 import argparse
-import threading
-import concurrent.futures
 import asyncio
-from tqdm import tqdm
-import traceback
+import json
+import os
+import threading
 
+from tqdm import tqdm
+
+from evaluations import get_eval_func
 from methods import get_method_class
 from utils import (
-    reserve_unprocessed_queries,
     load_model_api_config,
-    write_to_jsonl,
     read_valid_jsonl,
+    reserve_unprocessed_queries,
+    write_to_jsonl,
 )
-from evaluations import get_eval_func
 
 
 async def evaluate_sample_async(args, item, save_eval_path, lock=None, llm=None):
