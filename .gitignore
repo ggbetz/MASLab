@@ -2,7 +2,7 @@ opencode.json*
 
 .secrets
 
-datasets/*
+datasets/data
 
 results/*
 

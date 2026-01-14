@@ -10,11 +10,36 @@ parser = argparse.ArgumentParser()
 parser.add_argument("--dataset_name", type=str, default="MATH")
 parser.add_argument("--dataset_path", type=str, default=None)
 parser.add_argument("--num2sample", type=int, default=500)
+parser.add_argument("--list-avail", action="store_true", help="List available datasets")
 args = parser.parse_args()
+
+# List available datasets if --list-avail flag is used
+if args.list_avail:
+    available_datasets = [
+        "MATH",
+        "GSM8K",
+        "AQUA-RAT",
+        "MedMCQA",
+        "MedQA",
+        "MMLU",
+        "MMLU-Pro",
+        "GSM-Hard",
+        "SciBench",
+        "AIME-2024",
+        "AIME-2025",
+        "APEX-SHORTLIST",
+    ]
+    print("Available datasets:")
+    for dataset in available_datasets:
+        print(f"  - {dataset}")
+    exit()
 
 save_path = os.path.join(
     os.path.dirname(os.path.abspath(__file__)), "data", f"{args.dataset_name}.json"
 )
+
+# Create data directory if it doesn't exist
+os.makedirs(os.path.dirname(save_path), exist_ok=True)
 
 
 def shuffle_and_sample(data_list, num2sample):
@@ -340,7 +365,7 @@ elif args.dataset_name == "AIME-2025":
     load_dataset_path = (
         args.dataset_path if args.dataset_path else "MathArena/aime_2025"
     )
-    dataset = load_dataset(load_dataset_path, split="train", trust_remote_code=True)
+    dataset = load_dataset(load_dataset_path, split="train")
     print(f"{'=' * 50}\n", dataset)
     data_list = [
         {
@@ -357,7 +382,7 @@ elif args.dataset_name == "APEX-SHORTLIST":
     load_dataset_path = (
         args.dataset_path if args.dataset_path else "MathArena/apex-shortlist"
     )
-    dataset = load_dataset(load_dataset_path, split="train", trust_remote_code=True)
+    dataset = load_dataset(load_dataset_path, split="train")
     print(f"{'=' * 50}\n", dataset)
     data_list = [
         {
