@@ -11,6 +11,7 @@ from agents import (
     Runner,
     set_trace_processors,
 )
+from agents.items import HandoffCallItem, ToolCallItem
 from agents.mcp import MCPServerStdio
 from openai import AsyncOpenAI
 from tenacity import retry, stop_after_attempt, wait_exponential
@@ -43,12 +44,14 @@ class MAS:
         self.model_max_tokens = general_config["model_max_tokens"]
         self.model_timeout = general_config["model_timeout"]
 
-        # Tracking compute costs
+        # Tracking compute costs and tool usage
         self.token_stats = {
             self.model_name: {
                 "num_llm_calls": 0,
                 "prompt_tokens": 0,
                 "completion_tokens": 0,
+                "num_tool_calls": 0,
+                "tool_calls_by_name": {},
             }
         }
 
@@ -198,15 +201,53 @@ class MAS:
             prompt_tokens = 0
             completion_tokens = 0
 
+        # Aggregate tool usage from the Agents SDK result. The new_items
+        # list contains RunItem objects, including ToolCallItem and
+        # HandoffCallItem instances for tool invocations.
+        num_tool_calls = 0
+        tool_calls_by_name: dict[str, int] = {}
+        try:
+            new_items = getattr(result, "new_items", []) or []
+            for item in new_items:
+                if isinstance(item, ToolCallItem):
+                    raw = getattr(item, "raw_item", None)
+                    tool_name = getattr(raw, "name", None) or getattr(raw, "type", None)
+                    if not tool_name:
+                        tool_name = type(raw).__name__ if raw is not None else "unknown"
+                    num_tool_calls += 1
+                    tool_calls_by_name[tool_name] = (
+                        tool_calls_by_name.get(tool_name, 0) + 1
+                    )
+                elif isinstance(item, HandoffCallItem):
+                    raw = getattr(item, "raw_item", None)
+                    tool_name = getattr(raw, "name", None) or "handoff"
+                    num_tool_calls += 1
+                    tool_calls_by_name[tool_name] = (
+                        tool_calls_by_name.get(tool_name, 0) + 1
+                    )
+        except Exception:
+            num_tool_calls = 0
+            tool_calls_by_name = {}
+
         if effective_model_name not in self.token_stats:
             self.token_stats[effective_model_name] = {
                 "num_llm_calls": 0,
                 "prompt_tokens": 0,
                 "completion_tokens": 0,
+                "num_tool_calls": 0,
+                "tool_calls_by_name": {},
             }
         self.token_stats[effective_model_name]["num_llm_calls"] += 1
         self.token_stats[effective_model_name]["prompt_tokens"] += prompt_tokens
         self.token_stats[effective_model_name]["completion_tokens"] += completion_tokens
+        self.token_stats[effective_model_name]["num_tool_calls"] += num_tool_calls
+        for name, count in tool_calls_by_name.items():
+            current = self.token_stats[effective_model_name]["tool_calls_by_name"].get(
+                name, 0
+            )
+            self.token_stats[effective_model_name]["tool_calls_by_name"][name] = (
+                current + count
+            )
 
         return response
 
