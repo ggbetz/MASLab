@@ -1,0 +1,20 @@
+n_solutions: 2
+n_max_verifiers: 2
+vera_temp: 0.0
+
+# Logical agent configuration for MAV system
+logical_agents:
+  # Per-role agents (derived from roles[])
+  default:
+    instructions: >
+      You are a helpful and highly proficient AI agent in a MAV multi-agent
+      system. You think carefully and answer accurately in line with with
+      the specific prompt.
+    mcp_servers: ["reasoning-graph"]
+
+# MCP server configuration
+mcp_servers:
+  reasoning-graph:
+    type: "stdio"
+    command: ".venv-cedrus/bin/python"
+    args: ["-m", "cedrus"]

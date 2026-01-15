@@ -2,19 +2,24 @@
 # These codes for general use cases (datasets) are designed by authors of UniMAS.
 
 import os
-from collections import defaultdict
 import random
+from collections import defaultdict
 
-from .util import *
-from .prompt_main import *
 from ..mas_base import MAS
 from ..utils import load_config
+from .prompt_main import (
+    GEN_PROMPT_MAIN,
+    SYSTEM_STR_MAIN,
+    VERA_ASK_FOR_APPROVAL_ONLY_PROMPT,
+    VERA_NAMES_TO_PROMPTS,
+)
+from .util import compute_aggregated_verification_score, extract_verifier_approval
 
 
 class MAV_Main(MAS):
     def __init__(self, general_config, method_config_name=None):
         method_config_name = (
-            "config" if method_config_name is None else method_config_name
+            "config_main" if method_config_name is None else method_config_name
         )
         super().__init__(general_config, method_config_name)
 
@@ -104,9 +109,12 @@ class MAV_Main(MAS):
         solution_vera_approvals = [
             data["all_solution_vera_approvals"][i] for i in sampled_indices
         ]
-        agg_score_key = lambda i: compute_aggregated_verification_score(
-            solution_vera_approvals[i], self.veras
-        )
+
+        def agg_score_key(i):
+            return compute_aggregated_verification_score(
+                solution_vera_approvals[i], self.veras
+            )
+
         best_solution_index = max(
             range(len(solution_vera_approvals)), key=agg_score_key
         )

@@ -2,17 +2,17 @@ import os
 import random
 from collections import defaultdict
 
-from .util import *
-from .prompt_main import *
-from .prompt_humaneval import *
 from ..mas_base import MAS
 from ..utils import load_config
+from .prompt_humaneval import *
+from .prompt_main import *
+from .util import *
 
 
 class MAV_HumanEval(MAS):
     def __init__(self, general_config, method_config_name=None):
         method_config_name = (
-            "config" if method_config_name is None else method_config_name
+            "config_main" if method_config_name is None else method_config_name
         )
         super().__init__(general_config, method_config_name)
 
