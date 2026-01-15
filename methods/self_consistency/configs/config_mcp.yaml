@@ -1,11 +1,11 @@
-# methods/cot/configs/config_mcp.yaml
+parallel_num: 5
 
 # New logical agent configuration
 logical_agents:
   default:
     # Optional but recommended: make instructions explicit
     instructions: >
-      You are a helpful chain-of-thought reasoner. Use the `reasoning-graph`
+      You are a helpful and highly proficient AI agent. Use the `reasoning-graph`
       MCP tools to structure your internal thinking and to deliberate about decisions.
     mcp_servers: ["reasoning-graph"]
 

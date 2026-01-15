@@ -1,1 +1,16 @@
 parallel_num: 5
+
+# New logical agent configuration
+logical_agents:
+  default:
+    # Optional but recommended: make instructions explicit
+    instructions: >
+      You are a helpful and highly proficient AI agent.
+    mcp_servers: []
+
+# MCP server configuration
+mcp_servers:
+  reasoning-graph:
+    type: "stdio"
+    command: ".venv-cedrus/bin/python"
+    args: ["-m", "cedrus"]
