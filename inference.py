@@ -70,6 +70,19 @@ def parse_args() -> argparse.Namespace:
     )
     parser.add_argument("--require_val", action="store_true")
 
+    # args related to agent configuration strictness
+    parser.add_argument(
+        "--agent_config_mode",
+        type=str,
+        choices=["strict", "warn"],
+        default="warn",
+        help=(
+            "How to handle missing logical_agents entries for agent IDs. "
+            "'strict' raises an error; 'warn' logs a warning and falls back "
+            "to default agent settings."
+        ),
+    )
+
     parser.add_argument("--debug", action="store_true")
     parser.add_argument("--sequential", action="store_true")
     parser.add_argument(

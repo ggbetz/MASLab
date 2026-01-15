@@ -50,6 +50,10 @@ class MAS:
         self.model_max_tokens = general_config["model_max_tokens"]
         self.model_timeout = general_config["model_timeout"]
 
+        # How strictly to enforce logical_agents configuration for agent IDs.
+        # Defaults to "warn" to preserve backward-compatible behavior.
+        self.agent_config_mode = general_config.get("agent_config_mode", "warn")
+
         # Tracking compute costs and tool usage
         self.token_stats = {
             self.model_name: {
@@ -283,6 +287,22 @@ class MAS:
             and "logical_agents" in self.method_config
             and "mcp_servers" in self.method_config
         )
+
+        # If a logical_agents block is present, optionally enforce that the
+        # requested agent_id is configured there. This avoids silent fallback
+        # to default settings when an agent ID is mistyped or missing.
+        if hasattr(self, "method_config") and "logical_agents" in self.method_config:
+            logical_agents_cfg = self.method_config["logical_agents"] or {}
+            if agent_id not in logical_agents_cfg:
+                msg = (
+                    f"Agent ID '{agent_id}' not found in method_config.logical_agents "
+                    f"for {self.__class__.__name__}; using default Agent settings instead."
+                )
+                mode = getattr(self, "agent_config_mode", "warn")
+                if mode == "strict":
+                    raise ValueError(msg)
+                elif mode == "warn":
+                    logger.warning(msg)
 
         if uses_mcp:
             cache_key = f"{agent_id}:{model_name}:{sample_uid}"
