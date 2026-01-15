@@ -1,0 +1,28 @@
+cnt_agents: 2
+max_turn: 3
+max_criticizing_rounds: 3
+
+# Per-logical-agent configuration for AgentVerse main
+logical_agents:
+  agentverse_assigner:
+    role: "assigner"
+    mcp_servers: ["reasoning-graph"]
+
+  agentverse_solver:
+    role: "solver"
+    mcp_servers: []
+
+  agentverse_critic:
+    role: "critic"
+    mcp_servers: []
+
+  agentverse_evaluator:
+    role: "evaluator"
+    mcp_servers: ["reasoning-graph"]
+
+# MCP server configuration
+mcp_servers:
+  reasoning-graph:
+    type: "stdio"
+    command: ".venv-cedrus/bin/python"
+    args: ["-m", "cedrus"]

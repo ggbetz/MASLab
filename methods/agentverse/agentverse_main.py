@@ -1,9 +1,18 @@
-import os
 import re
-from typing import List, Dict, Any, Set, Tuple
+from typing import Dict, List, Tuple
 
 from methods.mas_base import MAS
-from .prompt_main import *
+
+from .prompt_main import (
+    CRITIC_APPEND_PROMPT,
+    CRITIC_PREPEND_PROMPT,
+    EVALUATOR_APPEND_PROMPT,
+    EVALUATOR_PREPEND_PROMPT,
+    ROLE_ASSIGNER_APPEND_PROMPT,
+    ROLE_ASSIGNER_PREPEND_PROMPT,
+    SOLVER_APPEND_PROMPT,
+    SOLVER_PREPEND_PROMPT,
+)
 
 
 # Define the NEWMAS class which inherits from MAS and implements the inference method
