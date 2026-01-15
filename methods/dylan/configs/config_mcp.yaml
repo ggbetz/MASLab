@@ -1,0 +1,46 @@
+# DyLAN Method Configuration
+
+# General settings
+random_seed: 0
+debug: false
+
+# Agent settings
+num_agents: 4
+num_rounds: 3
+activation: "listwise"
+type: "open-ended"
+
+# Agent roles - must match the number of agents
+roles:
+  - "Assistant"
+  - "Assistant"
+  - "Assistant"
+  - "Assistant"
+
+# Logical agent configuration for DyLAN open-ended mode
+logical_agents:
+  # Per-role agents (derived from roles[])
+  dylan_main_Assistant:
+    instructions: >
+      You are an "Assistant" role in the DyLAN open-ended network.
+      Think step by step and provide clear, detailed reasoning. Use the
+      `reasoning-graph` MCP tools to structure your internal thinking
+      and to deliberate about decisions.
+    mcp_servers: ["reasoning-graph"]
+
+  # Generic ranker agent used for listwise ranking
+  dylan_main_ranker:
+    instructions: >
+      You are a DyLAN listwise ranker. Given several candidate
+      responses, you analyze them and select the best ones according
+      to the instructions in the prompt.  Use the `reasoning-graph`
+      MCP tools to structure your internal thinking and to deliberate
+      about decisions.
+    mcp_servers: ["reasoning-graph"]
+
+# MCP server configuration
+mcp_servers:
+  reasoning-graph:
+    type: "stdio"
+    command: ".venv-cedrus/bin/python"
+    args: ["-m", "cedrus"]

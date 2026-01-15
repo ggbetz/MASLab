@@ -16,12 +16,23 @@ logical_agents:
     instructions: >
       You are a DyLAN math agent participating in a multi-round debate.
       Follow the given examples, reason step by step, and produce a
-      single, well-justified final numeric answer when possible.
-    mcp_servers: []
+      single, well-justified final numeric answer when possible. Use the
+      `reasoning-graph` MCP tools to structure your internal thinking
+      and to deliberate about decisions.
+    mcp_servers: ["reasoning-graph"]
 
   dylan_math_ranker:
     instructions: >
       You are a DyLAN math ranker. Given several candidate math
       solutions, you compare them and select the top ones as
-      requested in the prompt.
-    mcp_servers: []
+      requested in the prompt. Use the
+      `reasoning-graph` MCP tools to structure your internal thinking
+      and to deliberate about decisions.
+    mcp_servers: ["reasoning-graph"]
+
+# MCP server configuration
+mcp_servers:
+  reasoning-graph:
+    type: "stdio"
+    command: ".venv-cedrus/bin/python"
+    args: ["-m", "cedrus"]

@@ -1,9 +1,9 @@
 import math
 import re
-import os
-from typing import Dict, List, Tuple, Any
+from typing import Dict, List, Tuple
 
 from methods.mas_base import MAS
+
 from .utils_math import get_examples
 
 

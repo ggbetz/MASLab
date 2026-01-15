@@ -1,0 +1,92 @@
+# Configuration for Dylan MMLU
+
+# Global settings
+random_seed: 0 # Random seed for reproducibility
+
+# Method specific parameters
+activation: "listwise" # Activation function: listwise, trueskill, window, or none
+type: "single_choice" # Question type: single_choice or math_exp
+num_rounds: 3 # Number of rounds to run
+
+# Available roles for agents
+roles:
+  - "Economist"
+  - "Doctor"
+  - "Lawyer"
+  - "Mathematician"
+  - "Psychologist"
+  - "Programmer"
+  - "Historian"
+
+# Logical agent configuration for DyLAN MMLU
+logical_agents:
+  dylan_mmlu_Economist:
+    instructions: >
+      You are an Economist agent in DyLAN MMLU, answering multiple-choice
+      questions from an economics point of view. Use the
+      `reasoning-graph` MCP tools to structure your internal thinking
+      and to deliberate about decisions.
+    mcp_servers: ["reasoning-graph"]
+
+  dylan_mmlu_Doctor:
+    instructions: >
+      You are a Doctor agent in DyLAN MMLU, answering multiple-choice
+      questions from a medical point of view.  Use the
+      `reasoning-graph` MCP tools to structure your internal thinking
+      and to deliberate about decisions.
+    mcp_servers: ["reasoning-graph"]
+
+  dylan_mmlu_Lawyer:
+    instructions: >
+      You are a Lawyer agent in DyLAN MMLU, answering multiple-choice
+      questions from a legal and historical point of view. Use the
+      `reasoning-graph` MCP tools to structure your internal thinking
+      and to deliberate about decisions.
+    mcp_servers: ["reasoning-graph"]
+
+  dylan_mmlu_Mathematician:
+    instructions: >
+      You are a Mathematician agent in DyLAN MMLU, focusing on
+      mathematical reasoning. Use the
+      `reasoning-graph` MCP tools to structure your internal thinking
+      and to deliberate about decisions.
+    mcp_servers: ["reasoning-graph"]
+
+  dylan_mmlu_Psychologist:
+    instructions: >
+      You are a Psychologist agent in DyLAN MMLU, focusing on
+      psychology and social sciences. Use the
+      `reasoning-graph` MCP tools to structure your internal thinking
+      and to deliberate about decisions.
+    mcp_servers: ["reasoning-graph"]
+
+  dylan_mmlu_Programmer:
+    instructions: >
+      You are a Programmer agent in DyLAN MMLU, focusing on computing
+      and technical topics. Use the
+      `reasoning-graph` MCP tools to structure your internal thinking
+      and to deliberate about decisions.
+    mcp_servers: ["reasoning-graph"]
+
+  dylan_mmlu_Historian:
+    instructions: >
+      You are a Historian agent in DyLAN MMLU, focusing on history
+      and related domains. Use the
+      `reasoning-graph` MCP tools to structure your internal thinking
+      and to deliberate about decisions.
+    mcp_servers: ["reasoning-graph"]
+
+  dylan_mmlu_ranker:
+    instructions: >
+      You are a DyLAN MMLU ranker. Given several candidate answers,
+      you compare and select the top ones according to the prompt. Use the
+      `reasoning-graph` MCP tools to structure your internal thinking
+      and to deliberate about decisions.
+    mcp_servers: ["reasoning-graph"]
+
+# MCP server configuration
+mcp_servers:
+  reasoning-graph:
+    type: "stdio"
+    command: ".venv-cedrus/bin/python"
+    args: ["-m", "cedrus"]
