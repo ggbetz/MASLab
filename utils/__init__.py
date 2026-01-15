@@ -1,1 +1,7 @@
-from .utils import load_model_api_config, write_to_jsonl, reserve_unprocessed_queries, read_valid_jsonl
+from .utils import (
+    load_model_api_config,
+    read_valid_jsonl,
+    redact_model_api_entry,
+    reserve_unprocessed_queries,
+    write_to_jsonl,
+)

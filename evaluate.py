@@ -4,17 +4,20 @@ import json
 import os
 import threading
 
+from loguru import logger
 from tqdm import tqdm
 
 from evaluations import get_eval_func
+from inference import build_output_path
 from methods import get_method_class
 from utils import (
     load_model_api_config,
     read_valid_jsonl,
+    redact_model_api_entry,
     reserve_unprocessed_queries,
     write_to_jsonl,
 )
-from inference import build_output_path
+from utils.logging import setup_logging
 
 
 async def evaluate_sample_async(args, item, save_eval_path, lock=None, llm=None):
@@ -30,7 +33,7 @@ async def evaluate_sample_async(args, item, save_eval_path, lock=None, llm=None)
     save_data["eval_content"] = eval_content
     save_data["eval_score"] = eval_score
     if args.debug:
-        print(json.dumps(save_data, indent=4))
+        logger.info(json.dumps(save_data, indent=4))
     else:
         write_to_jsonl(save_eval_path, save_data, lock=lock)
 
@@ -112,19 +115,21 @@ async def main_async():
         help="Turn this on to run the evaluation sequentially.",
     )
     args = parser.parse_args()
+    setup_logging()
 
     general_config = vars(args)
 
-    print(
-        "=" * 50,
-        f"\nEvaluating {args.tested_method_name} on {args.tested_dataset_name} with {args.tested_mas_model_name} as MAS model using {args.model_name} as LLM",
+    logger.info(
+        f"Evaluating {args.tested_method_name} on {args.tested_dataset_name} with {args.tested_mas_model_name} as MAS model using {args.model_name} as LLM"
     )
-    print(json.dumps(general_config, indent=4))
+    logger.debug(f"General config: {json.dumps(general_config, indent=2)}")
 
     # Load model config
     model_api_config = load_model_api_config(args.model_api_config, args.model_name)
     general_config.update({"model_api_config": model_api_config})
-    print("-" * 50, f"\n>> Model API config: {model_api_config[args.model_name]}")
+
+    redacted_config = redact_model_api_entry(model_api_config[args.model_name])
+    logger.info(f"Model API config: {redacted_config}")
 
     LLM_METHOD = get_method_class("vanilla")
 
@@ -136,44 +141,43 @@ async def main_async():
         model_name=args.tested_mas_model_name,
         output_path=args.tested_infer_path,
     )
-    save_eval_path = tested_infer_path.replace("infer", "xverify_eval")
+    # Use eval_protocol to determine suffix, e.g. xverify_eval, foo_eval, etc.
+    eval_suffix = f"{args.eval_protocol}_eval"
+    save_eval_path = tested_infer_path.replace("infer", eval_suffix)
 
     if args.debug:
         sample = {"query": "1+3=?", "gt": "4", "response": "\\boxed{4}"}
-        async with LLM_METHOD(general_config) as llm:
-            await evaluate_sample_async(
-                args, sample, save_eval_path, lock=None, llm=llm
-            )
+        llm = LLM_METHOD(general_config)
+        await evaluate_sample_async(args, sample, save_eval_path, lock=None, llm=llm)
     else:
         eval_data = read_valid_jsonl(tested_infer_path)
-        print(f">> Before filtering: {len(eval_data)} samples")
+        logger.info(f"Before filtering: {len(eval_data)} samples")
 
         if args.overwrite and os.path.exists(save_eval_path):
             os.remove(save_eval_path)
-            print(f">> {save_eval_path} exists, remove it.")
+            logger.warning(f"Removing existing evaluation file: {save_eval_path}")
         else:
             eval_data = reserve_unprocessed_queries(save_eval_path, eval_data)
-        print(f">> After filtering: {len(eval_data)} samples")
+        logger.info(f"After filtering: {len(eval_data)} samples to evaluate")
 
-        max_workers = model_api_config[args.model_name]["max_workers"]
         lock = threading.Lock()
 
-        async with LLM_METHOD(general_config) as llm:
-            if args.sequential:
-                for sample in eval_data:
-                    await evaluate_sample_async(args, sample, save_eval_path, lock, llm)
-            else:
-                tasks = [
-                    evaluate_sample_async(args, sample, save_eval_path, lock, llm)
-                    for sample in eval_data
-                ]
+        llm = LLM_METHOD(general_config)
+        if args.sequential:
+            for sample in eval_data:
+                await evaluate_sample_async(args, sample, save_eval_path, lock, llm)
+        else:
+            tasks = [
+                evaluate_sample_async(args, sample, save_eval_path, lock, llm)
+                for sample in eval_data
+            ]
 
-                for coro in tqdm(
-                    asyncio.as_completed(tasks),
-                    total=len(tasks),
-                    desc="Evaluating MAS",
-                ):
-                    await coro
+            for coro in tqdm(
+                asyncio.as_completed(tasks),
+                total=len(tasks),
+                desc="Evaluating MAS",
+            ):
+                await coro
 
         # Load evaluation results and print the statistics
         with open(save_eval_path, "r") as f:
@@ -194,8 +198,11 @@ async def main_async():
                 if not sample["eval_content"].startswith("Eval Error")
             ]
         )
-        print(
-            f">> Evaluation Finished:\n{sample_num} samples in total\n{num_valid} valid samples | {valid_correct_num} correct samples | accuracy: {valid_correct_num / num_valid * 100:.2f}%\n{num_exclude_eval_error} samples excluding eval error | accuracy: {valid_correct_num / num_exclude_eval_error * 100:.2f}%"
+        logger.info(
+            f"Evaluation completed - Total: {sample_num} | Valid: {num_valid} | Correct: {valid_correct_num} | Accuracy: {valid_correct_num / num_valid * 100:.2f}%"
+        )
+        logger.info(
+            f"Excluding eval errors - Valid: {num_exclude_eval_error} | Accuracy: {valid_correct_num / num_exclude_eval_error * 100:.2f}%"
         )
 
 

@@ -5,13 +5,23 @@ import random
 from typing import Any, cast
 
 from datasets import load_dataset
+from loguru import logger
+from utils.logging import setup_logging
 
 parser = argparse.ArgumentParser()
 parser.add_argument("--dataset_name", type=str, default="MATH")
 parser.add_argument("--dataset_path", type=str, default=None)
-parser.add_argument("--num2sample", type=int, default=500)
+parser.add_argument(
+    "--num2sample",
+    type=int,
+    default=500,
+    help="Max number of items to include in test dataset",
+)
 parser.add_argument("--list-avail", action="store_true", help="List available datasets")
 args = parser.parse_args()
+
+# Setup logging
+setup_logging()
 
 # List available datasets if --list-avail flag is used
 if args.list_avail:
@@ -29,9 +39,9 @@ if args.list_avail:
         "AIME-2025",
         "APEX-SHORTLIST",
     ]
-    print("Available datasets:")
+    logger.info("Available datasets:")
     for dataset in available_datasets:
-        print(f"  - {dataset}")
+        logger.info(f"  - {dataset}")
     exit()
 
 save_path = os.path.join(
@@ -57,7 +67,7 @@ def deduplicate(data_list):
             unique_data.append(item)  # add the first occurrence of this sample
             seen_queries.add(item["query"])  # mark this query as already seen
     if len(unique_data) < len(data_list):
-        print(f">> Duplicate samples removed: {len(data_list) - len(unique_data)}")
+        logger.info(f"Duplicate samples removed: {len(data_list) - len(unique_data)}")
     return unique_data
 
 
@@ -67,7 +77,7 @@ if args.dataset_name == "MATH":
         args.dataset_path if args.dataset_path else "HuggingFaceH4/MATH-500"
     )
     dataset = load_dataset(load_dataset_path, split="test", trust_remote_code=True)
-    print(f"{'=' * 50}\n", dataset)
+    logger.info(f"Loaded dataset: {dataset}")
     data_list = [
         {
             "query": example["problem"],
@@ -90,7 +100,7 @@ elif args.dataset_name == "GSM8K":
     dataset = load_dataset(
         load_dataset_path, "main", split="test", trust_remote_code=True
     )
-    print(f"{'=' * 50}\n", dataset)
+    logger.info(f"Loaded dataset: {dataset}")
     data_list = [
         {
             "query": example["question"],
@@ -108,7 +118,9 @@ elif args.dataset_name == "AQUA-RAT":
     dataset = load_dataset(
         load_dataset_path, "raw", split="test", trust_remote_code=True
     )
-    print(f"{'=' * 50}\n", dataset)  # question / options / rationale / correct
+    logger.info(
+        f"Loaded dataset: {dataset}"
+    )  # question / options / rationale / correct
 
     def format_aqua_rat_query(example):
         query = example["question"]
@@ -137,7 +149,7 @@ elif args.dataset_name == "MedMCQA":
         load_dataset_path, split="validation", trust_remote_code=True
     )
     filtered_dataset = dataset.filter(lambda example: example["choice_type"] != "multi")
-    print(f"{'=' * 50}\n", filtered_dataset)
+    logger.info(f"Filtered dataset: {filtered_dataset}")
 
     def format_medmcqa_query(example):
         query = example["question"]
@@ -173,7 +185,7 @@ elif args.dataset_name == "MedMCQA":
 elif args.dataset_name == "MedQA":
     load_dataset_path = args.dataset_path if args.dataset_path else "bigbio/med_qa"
     dataset = load_dataset(load_dataset_path, split="test", trust_remote_code=True)
-    print(f"{'=' * 50}\n", dataset)
+    logger.info(f"Loaded dataset: {dataset}")
 
     def format_medqa_query(example):
         query = example["question"]
@@ -203,7 +215,7 @@ elif args.dataset_name == "MMLU":
     dataset = load_dataset(
         load_dataset_path, "all", split="test", trust_remote_code=True
     )
-    print(f"{'=' * 50}\n", dataset)
+    logger.info(f"Loaded dataset: {dataset}")
 
     def format_mmlu_query(example):
         query = f"""The following is a multiple-choice question:
@@ -236,7 +248,7 @@ Choose the correct answer from the following options:
 elif args.dataset_name == "MMLU-Pro":
     load_dataset_path = args.dataset_path if args.dataset_path else "TIGER-Lab/MMLU-Pro"
     dataset = load_dataset(load_dataset_path, split="test", trust_remote_code=True)
-    print(f"{'=' * 50}\n", dataset)
+    logger.info(f"Loaded dataset: {dataset}")
     option_list = ["A", "B", "C", "D", "E", "F", "G", "H", "I", "J"]
 
     def format_mmlu_pro_query(example):
@@ -269,7 +281,7 @@ elif args.dataset_name == "GSM-Hard":
         args.dataset_path if args.dataset_path else "reasoning-machines/gsm-hard"
     )
     dataset = load_dataset(load_dataset_path, split="train", trust_remote_code=True)
-    print(f"{'=' * 50}\n", dataset)
+    logger.info(f"Loaded dataset: {dataset}")
     data_list = [
         {
             "query": example["input"],
@@ -292,7 +304,7 @@ elif args.dataset_name.startswith("GPQA"):
         dataset = load_dataset(
             load_dataset_path, "gpqa_main", split="train", trust_remote_code=True
         )
-    print(f"{'=' * 50}\n", dataset)
+    logger.info(f"Loaded dataset: {dataset}")
 
     def format_gpqa_query(example):
         query = example["Question"]
@@ -327,7 +339,7 @@ elif args.dataset_name.startswith("GPQA"):
 elif args.dataset_name == "SciBench":
     load_dataset_path = args.dataset_path if args.dataset_path else "xw27/scibench"
     dataset = load_dataset(load_dataset_path, split="train", trust_remote_code=True)
-    print(f"{'=' * 50}\n", dataset)
+    logger.info(f"Loaded dataset: {dataset}")
 
     def format_scibench_gt(example):
         answer = f"{example['answer_number']}, the unit is {example['unit']}."
@@ -349,7 +361,7 @@ elif args.dataset_name == "AIME-2024":
         args.dataset_path if args.dataset_path else "Maxwell-Jia/AIME_2024"
     )
     dataset = load_dataset(load_dataset_path, split="train", trust_remote_code=True)
-    print(f"{'=' * 50}\n", dataset)
+    logger.info(f"Loaded dataset: {dataset}")
     data_list = [
         {
             "query": example["Problem"],
@@ -366,7 +378,7 @@ elif args.dataset_name == "AIME-2025":
         args.dataset_path if args.dataset_path else "MathArena/aime_2025"
     )
     dataset = load_dataset(load_dataset_path, split="train")
-    print(f"{'=' * 50}\n", dataset)
+    logger.info(f"Loaded dataset: {dataset}")
     data_list = [
         {
             "query": example["problem"],
@@ -383,7 +395,7 @@ elif args.dataset_name == "APEX-SHORTLIST":
         args.dataset_path if args.dataset_path else "MathArena/apex-shortlist"
     )
     dataset = load_dataset(load_dataset_path, split="train")
-    print(f"{'=' * 50}\n", dataset)
+    logger.info(f"Loaded dataset: {dataset}")
     data_list = [
         {
             "query": example["problem"],
@@ -400,9 +412,9 @@ else:
     raise ValueError(f"Dataset {args.dataset_name} not supported.")
 
 sample_pool = deduplicate(data_list)
-print(f">> A data sample from the pool:\n{sample_pool[0]}")
+logger.info(f"Data sample from pool: {sample_pool[0]}")
 
-print(f"{'=' * 50}\n There are {len(sample_pool)} queries in the pool.")
+logger.info(f"There are {len(sample_pool)} queries in the pool.")
 
 with open(save_path, "w") as output_json:
     json.dump(sample_pool, output_json, indent=4)

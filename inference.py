@@ -1,3 +1,5 @@
+"inferency.py"
+
 import argparse
 import asyncio
 import json
@@ -7,10 +9,17 @@ import uuid
 from asyncio import Lock, Semaphore
 from typing import Any, Dict, Iterable, Optional, Tuple
 
+from loguru import logger
 from tqdm import tqdm
 
 from methods import get_method_class
-from utils import load_model_api_config, reserve_unprocessed_queries, write_to_jsonl
+from utils import (
+    load_model_api_config,
+    redact_model_api_entry,
+    reserve_unprocessed_queries,
+    write_to_jsonl,
+)
+from utils.logging import setup_logging
 
 
 def parse_args() -> argparse.Namespace:
@@ -76,7 +85,9 @@ def build_general_config(args: argparse.Namespace) -> Dict[str, Any]:
     general_config: Dict[str, Any] = vars(args).copy()
     model_api_config = load_model_api_config(args.model_api_config, args.model_name)
     general_config["model_api_config"] = model_api_config
-    print("-" * 50, f"\n>> Model API config: {model_api_config[args.model_name]}")
+
+    redacted_config = redact_model_api_entry(model_api_config[args.model_name])
+    logger.info("-" * 50, f"\n>> Model API config: {redacted_config}")
     return general_config
 
 
@@ -139,7 +150,8 @@ async def run_sample(
                 f"The key 'response' is not found in the MAS output: {mas_output}"
             )
         save_data.update(mas_output)
-    except Exception:
+    except Exception as e:
+        logger.error(f"Inference error for sample {sample_uid}: {e}")
         save_data["error"] = f"Inference Error: {traceback.format_exc()}"
 
     save_data["token_stats"] = mas.get_token_stats()
@@ -149,7 +161,7 @@ async def run_sample(
 
 
 async def run_debug(mas, args: argparse.Namespace) -> None:
-    print(args.method_name)
+    logger.info(args.method_name)
     if args.method_name in ["dylan_humaneval"]:
         sample = {
             "query": """\
@@ -167,8 +179,8 @@ def add(a: int, b: int) -> int:
     async with mas.sample_context(sample_uid):
         response = await mas.inference(sample)
 
-    print(json.dumps(response, indent=4))
-    print(f"\n>> Token stats: {json.dumps(mas.get_token_stats(), indent=4)}")
+    logger.info(json.dumps(response, indent=4))
+    logger.info(f"\n>> Token stats: {json.dumps(mas.get_token_stats(), indent=4)}")
 
 
 async def run_full_inference(
@@ -176,7 +188,7 @@ async def run_full_inference(
     args: argparse.Namespace,
     general_config: Dict[str, Any],
 ) -> None:
-    print(f">> Method: {args.method_name} | Dataset: {args.test_dataset_name}")
+    logger.info(f">> Method: {args.method_name} | Dataset: {args.test_dataset_name}")
 
     test_dataset, val_dataset = load_datasets(args)
 
@@ -190,7 +202,7 @@ async def run_full_inference(
     os.makedirs(os.path.dirname(output_path), exist_ok=True)
 
     test_dataset = reserve_unprocessed_queries(output_path, test_dataset)
-    print(f">> After filtering: {len(test_dataset)} samples")
+    logger.info(f">> After filtering: {len(test_dataset)} samples")
 
     if args.require_val and val_dataset is not None:
         await asyncio.to_thread(mas.optimizing, val_dataset)
@@ -218,6 +230,7 @@ async def run_full_inference(
 
 async def main_async() -> None:
     args = parse_args()
+    setup_logging()
     general_config = build_general_config(args)
     mas = create_mas(args, general_config)
 

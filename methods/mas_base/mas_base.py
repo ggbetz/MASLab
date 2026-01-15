@@ -1,6 +1,11 @@
-import asyncio
+"methods/mas_base/mas_base.py"
+
 import os
 from contextvars import ContextVar
+
+# Suppress MCP server verbose logging
+os.environ.setdefault("MCP_LOG_LEVEL", "ERROR")
+os.environ.setdefault("FASTMCP_LOG_LEVEL", "ERROR")
 
 # OpenAI Agents SDK imports
 from agents import (
@@ -13,6 +18,7 @@ from agents import (
 )
 from agents.items import HandoffCallItem, ToolCallItem
 from agents.mcp import MCPServerStdio
+from loguru import logger
 from openai import AsyncOpenAI
 from tenacity import retry, stop_after_attempt, wait_exponential
 
@@ -72,10 +78,14 @@ class MAS:
 
         primary_base_url = primary_cfg["model_url"]
         primary_api_key = primary_cfg["api_key"]
+        self.api_model_identifier = primary_cfg.get("model_name", self.model_name)
 
-        # Debug: Print the configuration (can be removed in production)
-        print(f"[DEBUG] Using base_url: {primary_base_url}")
-        print(f"[DEBUG] Using model: {self.model_name}")
+        # Debug: Log the configuration
+        logger.debug(f"Using base_url: {primary_base_url}")
+        logger.debug(
+            f"Using model identifier: {self.model_name} ({self.api_model_identifier})"
+        )
+        logger.debug("MCP server logging suppressed (MCP_LOG_LEVEL=ERROR)")
 
         self.client = AsyncOpenAI(base_url=primary_base_url, api_key=primary_api_key)
 
@@ -133,6 +143,12 @@ class MAS:
 
         # Resolve model name used for selection in model_api_config
         effective_model_name = model_name if model_name is not None else self.model_name
+        if effective_model_name in self.model_api_config:
+            effective_api_model_identifier = self.model_api_config[
+                effective_model_name
+            ]["model_list"][0].get("model_name", effective_model_name)
+        else:
+            effective_api_model_identifier = effective_model_name
 
         # Normalize messages into a transcript string for the Agent input.
         if messages is None:
@@ -167,7 +183,7 @@ class MAS:
         # synchronously create any MCP server objects referenced in the
         # method configuration, but it will NOT start them yet.
         agent = self._get_or_create_logical_agent(
-            agent_id, effective_model_name, sample_uid=sample_uid
+            agent_id, effective_api_model_identifier, sample_uid=sample_uid
         )
 
         model_settings = ModelSettings(temperature=effective_temperature)
@@ -300,8 +316,8 @@ class MAS:
                         agent_id, sample_uid, mcp_server_names
                     )
                 except Exception as e:
-                    print(
-                        f"Warning: Failed to create MCP servers for agent {agent_id}: {e}"
+                    logger.warning(
+                        f"Failed to create MCP servers for agent {agent_id}: {e}"
                     )
                     mcp_servers = []
 
@@ -340,14 +356,12 @@ class MAS:
                 if hasattr(server, "connect"):
                     try:
                         await server.connect()
-                        print(
-                            f"Started MCP server: {server_name} "
-                            f"(agent_id={agent_id}, sample_uid={sample_uid})"
+                        logger.debug(
+                            f"Started MCP server: {server_name} (agent_id={agent_id}, sample_uid={sample_uid})"
                         )
                     except Exception as e:
-                        print(
-                            f"Failed to start MCP server {server_name} "
-                            f"(agent_id={agent_id}, sample_uid={sample_uid}): {e}"
+                        logger.error(
+                            f"Failed to start MCP server {server_name} (agent_id={agent_id}, sample_uid={sample_uid}): {e}"
                         )
 
     async def _cleanup_mcp_servers_for_sample(self, sample_uid: str | None) -> None:
@@ -369,14 +383,12 @@ class MAS:
                 if hasattr(server, "cleanup"):
                     try:
                         await server.cleanup()
-                        print(
-                            f"Stopped MCP server: {server_name} "
-                            f"(agent_id={agent_id}, sample_uid={sample_uid})"
+                        logger.debug(
+                            f"Stopped MCP server: {server_name} (agent_id={agent_id}, sample_uid={sample_uid})"
                         )
                     except Exception as e:
-                        print(
-                            f"Error stopping MCP server {server_name} "
-                            f"(agent_id={agent_id}, sample_uid={sample_uid}): {e}"
+                        logger.error(
+                            f"Error stopping MCP server {server_name} (agent_id={agent_id}, sample_uid={sample_uid}): {e}"
                         )
                 per_sample.pop(server_name, None)
             if not per_sample:

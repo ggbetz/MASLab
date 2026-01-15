@@ -1,6 +1,7 @@
+import copy
 import json
 import os
-from typing import Any, Dict, Iterable, Optional
+from typing import Any, Dict
 
 
 def load_model_api_config(model_api_config, model_name):
@@ -51,3 +52,26 @@ def reserve_unprocessed_queries(output_path, test_dataset):
         sample for sample in test_dataset if sample["query"] not in processed_queries
     ]
     return test_dataset
+
+
+def redact_model_api_entry(config_entry: Dict[str, Any]) -> Dict[str, Any]:
+    """
+    Return a deep-copied version of a model API config entry
+    with any api_key fields redacted.
+    """
+    redacted = copy.deepcopy(config_entry)
+
+    # Structure:
+    # {
+    #   "model_list": [
+    #       {"model_name": ..., "model_url": ..., "api_key": ...},
+    #       ...
+    #   ],
+    #   "max_workers_per_model": ...,
+    #   "max_workers": ...
+    # }
+    for backend in redacted.get("model_list", []):
+        if "api_key" in backend:
+            backend["api_key"] = "<redacted>"
+
+    return redacted

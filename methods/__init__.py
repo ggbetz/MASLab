@@ -1,3 +1,5 @@
+from loguru import logger
+
 from .agentverse import AgentVerse_HumanEval, AgentVerse_Main, AgentVerse_MGSM
 from .camel import CAMEL_Main
 from .cot import CoT
@@ -68,10 +70,13 @@ def get_method_class(method_name, dataset_name=None):
             if len(matched_method_data_names) > 0:
                 method_name = matched_method_data_names[0]
                 if len(matched_method_data_names) > 1:
-                    print(
+                    logger.warning(
                         f"[WARNING] Found multiple methods matching {dataset_name}: {matched_method_data_names}. Using {method_name} instead."
                     )
     else:
+        logger.error(
+            f"[ERROR] No method found matching {method_name}. Please check the method name."
+        )
         raise ValueError(
             f"[ERROR] No method found matching {method_name}. Please check the method name."
         )
