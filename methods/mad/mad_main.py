@@ -1,9 +1,18 @@
-import re
 import json
+import re
 
 from ..mas_base import MAS
+from .mad_prompt import (
+    AFFIRMATIVE_PROMPT,
+    DEBATE_PROMPT,
+    JUDGE_PROMPT_LAST1,
+    JUDGE_PROMPT_LAST2,
+    MODERATOR_META_PROMPT,
+    MODERATOR_PROMPT,
+    NEGATIVE_PROMPT,
+    PLAYER_META_PROMPT,
+)
 from .mad_utils import Agent
-from .mad_prompt import *
 
 NAME_LIST = [
     "Affirmative side",
@@ -58,13 +67,17 @@ class MAD_Main(MAS):
 
         # An affirmative agent starts the debate
         self.affirmative.add_event(self.affirmative_prompt)
-        self.aff_ans = await self.call_llm(messages=self.affirmative.memory_lst)
+        self.aff_ans = await self.call_llm_for_agent_async(
+            agent_id="debater", messages=self.affirmative.memory_lst
+        )
         self.affirmative.add_memory(self.aff_ans)
         self.base_answer = self.aff_ans
 
         # A negative agent responds to the affirmative agent
         self.negative.add_event(NEGATIVE_PROMPT.replace("##aff_ans##", self.aff_ans))
-        self.neg_ans = await self.call_llm(messages=self.negative.memory_lst)
+        self.neg_ans = await self.call_llm_for_agent_async(
+            agent_id="debater", messages=self.negative.memory_lst
+        )
         self.negative.add_memory(self.neg_ans)
 
         # A moderator evaluates the answers from both sides
@@ -73,7 +86,9 @@ class MAD_Main(MAS):
             .replace("##neg_ans##", self.neg_ans)
             .replace("##round##", "first")
         )
-        self.mod_ans = await self.call_llm(messages=self.moderator.memory_lst)
+        self.mod_ans = await self.call_llm_for_agent_async(
+            agent_id="moderator", messages=self.moderator.memory_lst
+        )
         self.mod_ans = re.sub(r"```json|```", "", self.mod_ans).strip()
         self.moderator.add_memory(self.mod_ans)
         try:
@@ -126,14 +141,18 @@ class MAD_Main(MAS):
                 self.affirmative.add_event(
                     DEBATE_PROMPT.replace("##oppo_ans##", self.neg_ans)
                 )
-                self.aff_ans = await self.call_llm(messages=self.affirmative.memory_lst)
+                self.aff_ans = await self.call_llm_for_agent_async(
+                    agent_id="debater", messages=self.affirmative.memory_lst
+                )
                 self.affirmative.add_memory(self.aff_ans)
 
                 # set the prompt for the negative side and update memory
                 self.negative.add_event(
                     DEBATE_PROMPT.replace("##oppo_ans##", self.aff_ans)
                 )
-                self.neg_ans = await self.call_llm(messages=self.negative.memory_lst)
+                self.neg_ans = await self.call_llm_for_agent_async(
+                    agent_id="debater", messages=self.negative.memory_lst
+                )
                 self.negative.add_memory(self.neg_ans)
 
                 # set the prompt for the moderator and update memory
@@ -142,7 +161,9 @@ class MAD_Main(MAS):
                     .replace("##neg_ans##", self.neg_ans)
                     .replace("##round##", self.round_dct(round + 2))
                 )
-                self.mod_ans = await self.call_llm(messages=self.moderator.memory_lst)
+                self.mod_ans = await self.call_llm_for_agent_async(
+                    agent_id="moderator", messages=self.moderator.memory_lst
+                )
                 self.mod_ans = re.sub(r"```json|```", "", self.mod_ans).strip()
                 self.moderator.add_memory(self.mod_ans)
                 try:
@@ -169,12 +190,16 @@ class MAD_Main(MAS):
                     "##neg_ans##", neg_ans
                 )
             )
-            ans = await self.call_llm(messages=judge_player.memory_lst)
+            ans = await self.call_llm_for_agent_async(
+                agent_id="judge", messages=judge_player.memory_lst
+            )
             judge_player.add_memory(ans)
 
             # let the judge decide the debate and give the final answer
             judge_player.add_event(self.judge_prompt_last2)
-            ans = await self.call_llm(messages=judge_player.memory_lst)
+            ans = await self.call_llm_for_agent_async(
+                agent_id="judge", messages=judge_player.memory_lst
+            )
             judge_player.add_memory(ans)
 
             ans = re.sub(r"```json|```", "", ans).strip()

@@ -1,2 +1,25 @@
 num_players: 3
 max_round: 3
+
+# Logical agent configuration for MAD debate
+logical_agents:
+  # Per-role agents (derived from roles[])
+  debater:
+    instructions: >
+      You are a "Debater" role in the MAD open-ended debate.
+      Think step by step and provide clear, detailed reasoning,
+      in line with the specific prompt.
+    mcp_servers: []
+
+  # Generic ranker agent used for listwise ranking
+  moderator:
+    instructions: >
+      You are a "Moderator" role in the MAD open-ended debate.
+    mcp_servers: []
+
+  judge:
+    instructions: >
+      You are a "Judge" role in the MAD open-ended debate.
+      Think step by step and provide clear, detailed reasoning,
+      in line with the specific prompt.
+    mcp_servers: []
