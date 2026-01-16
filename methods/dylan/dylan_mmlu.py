@@ -7,8 +7,8 @@ from methods.mas_base import MAS
 
 from .utils_mmlu import (
     ACTIVATION_MAP,
-    ROLE_MAP,
-    SYSTEM_PROMPT_MMLU,
+    # ROLE_MAP,
+    # SYSTEM_PROMPT_MMLU,
     most_frequent,
     parse_ranks,
     parse_single_choice,
