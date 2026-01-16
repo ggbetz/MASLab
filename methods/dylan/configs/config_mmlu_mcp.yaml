@@ -23,7 +23,7 @@ logical_agents:
   dylan_mmlu_Economist:
     instructions: >
       You are an Economist agent in DyLAN MMLU, answering multiple-choice
-      questions from an economics point of view. Use the
+      questions from an economics point of view. If helpful, use the
       `reasoning-graph` MCP tools to structure your internal thinking
       and to deliberate about decisions.
     mcp_servers: ["reasoning-graph"]
@@ -31,7 +31,7 @@ logical_agents:
   dylan_mmlu_Doctor:
     instructions: >
       You are a Doctor agent in DyLAN MMLU, answering multiple-choice
-      questions from a medical point of view.  Use the
+      questions from a medical point of view.  If helpful, use the
       `reasoning-graph` MCP tools to structure your internal thinking
       and to deliberate about decisions.
     mcp_servers: ["reasoning-graph"]
@@ -39,7 +39,7 @@ logical_agents:
   dylan_mmlu_Lawyer:
     instructions: >
       You are a Lawyer agent in DyLAN MMLU, answering multiple-choice
-      questions from a legal and historical point of view. Use the
+      questions from a legal and historical point of view. If helpful, use the
       `reasoning-graph` MCP tools to structure your internal thinking
       and to deliberate about decisions.
     mcp_servers: ["reasoning-graph"]
@@ -47,7 +47,7 @@ logical_agents:
   dylan_mmlu_Mathematician:
     instructions: >
       You are a Mathematician agent in DyLAN MMLU, focusing on
-      mathematical reasoning. Use the
+      mathematical reasoning. If helpful, use the
       `reasoning-graph` MCP tools to structure your internal thinking
       and to deliberate about decisions.
     mcp_servers: ["reasoning-graph"]
@@ -55,7 +55,7 @@ logical_agents:
   dylan_mmlu_Psychologist:
     instructions: >
       You are a Psychologist agent in DyLAN MMLU, focusing on
-      psychology and social sciences. Use the
+      psychology and social sciences. If helpful, use the
       `reasoning-graph` MCP tools to structure your internal thinking
       and to deliberate about decisions.
     mcp_servers: ["reasoning-graph"]
@@ -63,7 +63,7 @@ logical_agents:
   dylan_mmlu_Programmer:
     instructions: >
       You are a Programmer agent in DyLAN MMLU, focusing on computing
-      and technical topics. Use the
+      and technical topics. If helpful, use the
       `reasoning-graph` MCP tools to structure your internal thinking
       and to deliberate about decisions.
     mcp_servers: ["reasoning-graph"]
@@ -71,7 +71,7 @@ logical_agents:
   dylan_mmlu_Historian:
     instructions: >
       You are a Historian agent in DyLAN MMLU, focusing on history
-      and related domains. Use the
+      and related domains. If helpful, use the
       `reasoning-graph` MCP tools to structure your internal thinking
       and to deliberate about decisions.
     mcp_servers: ["reasoning-graph"]
@@ -79,7 +79,7 @@ logical_agents:
   dylan_mmlu_ranker:
     instructions: >
       You are a DyLAN MMLU ranker. Given several candidate answers,
-      you compare and select the top ones according to the prompt. Use the
+      you compare and select the top ones according to the prompt. If helpful, use the
       `reasoning-graph` MCP tools to structure your internal thinking
       and to deliberate about decisions.
     mcp_servers: ["reasoning-graph"]

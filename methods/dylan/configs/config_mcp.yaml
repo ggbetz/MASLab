@@ -23,7 +23,7 @@ logical_agents:
   dylan_main_Assistant:
     instructions: >
       You are an "Assistant" role in the DyLAN open-ended network.
-      Think step by step and provide clear, detailed reasoning. Use the
+      Think step by step and provide clear, detailed reasoning. If helpful, use the
       `reasoning-graph` MCP tools to structure your internal thinking
       and to deliberate about decisions.
     mcp_servers: ["reasoning-graph"]
@@ -33,7 +33,7 @@ logical_agents:
     instructions: >
       You are a DyLAN listwise ranker. Given several candidate
       responses, you analyze them and select the best ones according
-      to the instructions in the prompt.  Use the `reasoning-graph`
+      to the instructions in the prompt.  If helpful, use the `reasoning-graph`
       MCP tools to structure your internal thinking and to deliberate
       about decisions.
     mcp_servers: ["reasoning-graph"]

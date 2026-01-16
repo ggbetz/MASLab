@@ -6,17 +6,17 @@ rounds_num: 2
 logical_agents:
   debater_0:
     instructions: >
-      You are a helpful and highly competent AI assistant, participating in a multi-agent debate. Use the `reasoning-graph`
+      You are a helpful and highly competent AI assistant, participating in a multi-agent debate. If helpful, use the `reasoning-graph`
       MCP tools to structure your internal thinking and to deliberate about decisions.
     mcp_servers: ["reasoning-graph"]
   debater_1:
     instructions: >
-      You are a helpful and highly competent AI assistant, participating in a multi-agent debate. Use the `reasoning-graph`
+      You are a helpful and highly competent AI assistant, participating in a multi-agent debate. If helpful, use the `reasoning-graph`
       MCP tools to structure your internal thinking and to deliberate about decisions.
     mcp_servers: ["reasoning-graph"]
   debater_2:
     instructions: >
-      You are a helpful and highly competent AI assistant, participating in a multi-agent debate. Use the `reasoning-graph`
+      You are a helpful and highly competent AI assistant, participating in a multi-agent debate. If helpful, use the `reasoning-graph`
       MCP tools to structure your internal thinking and to deliberate about decisions.
     mcp_servers: ["reasoning-graph"]
 

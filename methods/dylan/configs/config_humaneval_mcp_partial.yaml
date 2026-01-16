@@ -48,7 +48,7 @@ logical_agents:
   dylan_humaneval_Tester:
     instructions: >
       You are the Tester judge in DyLAN HumanEval. You design unit
-      tests to validate candidate implementations. Use the
+      tests to validate candidate implementations. If helpful, use the
       `reasoning-graph` MCP tools to structure your internal thinking
       and to deliberate about decisions.
     mcp_servers: ["reasoning-graph"]
@@ -57,7 +57,7 @@ logical_agents:
     instructions: >
       You are the Reflector judge in DyLAN HumanEval. You reflect on
       multiple implementations, analyzing correctness, efficiency, and
-      corner cases. Use the
+      corner cases. If helpful, use the
       `reasoning-graph` MCP tools to structure your internal thinking
       and to deliberate about decisions.
     mcp_servers: ["reasoning-graph"]
@@ -65,7 +65,7 @@ logical_agents:
   dylan_humaneval_Debugger:
     instructions: >
       You are the Debugger judge in DyLAN HumanEval. You identify and
-      explain bugs in implementations and suggest fixes. Use the
+      explain bugs in implementations and suggest fixes. If helpful, use the
       `reasoning-graph` MCP tools to structure your internal thinking
       and to deliberate about decisions.
     mcp_servers: ["reasoning-graph"]
@@ -73,7 +73,7 @@ logical_agents:
   dylan_humaneval_QualityManager:
     instructions: >
       You are the QualityManager judge in DyLAN HumanEval. You review
-      code quality, style, and maintainability. Use the
+      code quality, style, and maintainability. If helpful, use the
       `reasoning-graph` MCP tools to structure your internal thinking
       and to deliberate about decisions.
     mcp_servers: ["reasoning-graph"]
@@ -81,7 +81,7 @@ logical_agents:
   dylan_humaneval_ranker:
     instructions: >
       You are a DyLAN HumanEval ranker. Given reflections and reviews,
-      you rank or select top implementations according to the prompt. Use the
+      you rank or select top implementations according to the prompt. If helpful, use the
       `reasoning-graph` MCP tools to structure your internal thinking
       and to deliberate about decisions.
     mcp_servers: ["reasoning-graph"]
