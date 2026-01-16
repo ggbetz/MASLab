@@ -191,8 +191,8 @@ elif args.dataset_name == "MedQA":
         example = example["data"]
         query = example["Question"]
         query += " Choose the correct answer from the following options:"
-        for option in example["Options"]:
-            query += f"\n({option['key']}) {option['value']}"
+        for key, value in example["Options"].items():
+            query += f"\n({key}) {value}"
         return query
 
     def format_medqa_gt(example):
