@@ -31,7 +31,7 @@
 2. Install MCP server
 
 ```bash
-uv pip install --python .venv-cedrus/bin/python 'git+https://github.com/debatelab/cedrus'
+uv pip install --python .venv-cedrus/bin/python 'git+https://github.com/cedrus/cedrus'
 ```
 
 3. To see if the codebase is executable (e.g., vanilla, cot, agentverse)
