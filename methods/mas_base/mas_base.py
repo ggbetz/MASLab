@@ -54,16 +54,9 @@ class MAS:
         # Defaults to "warn" to preserve backward-compatible behavior.
         self.agent_config_mode = general_config.get("agent_config_mode", "warn")
 
-        # Tracking compute costs and tool usage
-        self.token_stats = {
-            self.model_name: {
-                "num_llm_calls": 0,
-                "prompt_tokens": 0,
-                "completion_tokens": 0,
-                "num_tool_calls": 0,
-                "tool_calls_by_name": {},
-            }
-        }
+        # Tracking compute costs and tool usage per sample.
+        # Maps sample_uid (str) -> { model_name -> stats_dict }.
+        self.sample_token_stats = {}
 
         self.memory_bank = {}
         self.tools = {}
@@ -249,25 +242,28 @@ class MAS:
             num_tool_calls = 0
             tool_calls_by_name = {}
 
-        if effective_model_name not in self.token_stats:
-            self.token_stats[effective_model_name] = {
-                "num_llm_calls": 0,
-                "prompt_tokens": 0,
-                "completion_tokens": 0,
-                "num_tool_calls": 0,
-                "tool_calls_by_name": {},
-            }
-        self.token_stats[effective_model_name]["num_llm_calls"] += 1
-        self.token_stats[effective_model_name]["prompt_tokens"] += prompt_tokens
-        self.token_stats[effective_model_name]["completion_tokens"] += completion_tokens
-        self.token_stats[effective_model_name]["num_tool_calls"] += num_tool_calls
-        for name, count in tool_calls_by_name.items():
-            current = self.token_stats[effective_model_name]["tool_calls_by_name"].get(
-                name, 0
-            )
-            self.token_stats[effective_model_name]["tool_calls_by_name"][name] = (
-                current + count
-            )
+        # Only log stats when we have a sample_uid.
+        if sample_uid is not None:
+            stats_for_sample = self.sample_token_stats.setdefault(sample_uid, {})
+
+            if effective_model_name not in stats_for_sample:
+                stats_for_sample[effective_model_name] = {
+                    "num_llm_calls": 0,
+                    "prompt_tokens": 0,
+                    "completion_tokens": 0,
+                    "num_tool_calls": 0,
+                    "tool_calls_by_name": {},
+                }
+
+            model_stats = stats_for_sample[effective_model_name]
+            model_stats["num_llm_calls"] += 1
+            model_stats["prompt_tokens"] += prompt_tokens
+            model_stats["completion_tokens"] += completion_tokens
+            model_stats["num_tool_calls"] += num_tool_calls
+
+            for name, count in tool_calls_by_name.items():
+                current = model_stats["tool_calls_by_name"].get(name, 0)
+                model_stats["tool_calls_by_name"][name] = current + count
 
         return response
 
@@ -463,8 +459,13 @@ class MAS:
             try:
                 await self._mas._cleanup_mcp_servers_for_sample(self._sample_uid)
             finally:
+                # Clear the current sample UID context
                 if self._token is not None:
                     _current_sample_uid.reset(self._token)
+
+                # Clean up per-sample token stats now that processing is done
+                if self._sample_uid is not None:
+                    self._mas.sample_token_stats.pop(self._sample_uid, None)
 
     def sample_context(self, sample_uid: str | None):
         """Return an async context manager for the given sample UID."""
@@ -587,9 +588,6 @@ class MAS:
                     # Create and cache the server for this agent+sample
                     server = self._create_mcp_server(server_name, server_config)
                     per_sample[server_name] = server
-
-    def get_token_stats(self):
-        return self.token_stats
 
     def optimizing(self, val_data):
         """For methods that requires validation data such as GPTSwarm and ADAS"""

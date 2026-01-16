@@ -173,8 +173,6 @@ async def run_sample(
         logger.error(f"Inference error for sample {sample_uid}: {e}")
         save_data["error"] = f"Inference Error: {traceback.format_exc()}"
 
-    save_data["token_stats"] = mas.get_token_stats()
-
     async with write_lock:
         write_to_jsonl(output_path, save_data)
 
@@ -199,7 +197,6 @@ def add(a: int, b: int) -> int:
         response = await mas.inference(sample)
 
     logger.info(json.dumps(response, indent=4))
-    logger.info(f"\n>> Token stats: {json.dumps(mas.get_token_stats(), indent=4)}")
 
 
 async def run_full_inference(
