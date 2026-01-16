@@ -80,7 +80,7 @@ if args.dataset_name == "MATH":
     load_dataset_path = (
         args.dataset_path if args.dataset_path else "HuggingFaceH4/MATH-500"
     )
-    dataset = load_dataset(load_dataset_path, split="test", trust_remote_code=True)
+    dataset = load_dataset(load_dataset_path, split="test")
     logger.info(f"Loaded dataset: {dataset}")
     data_list = [
         {
@@ -101,9 +101,7 @@ if args.dataset_name == "MATH":
 # load GSM8K dataset
 elif args.dataset_name == "GSM8K":
     load_dataset_path = args.dataset_path if args.dataset_path else "openai/gsm8k"
-    dataset = load_dataset(
-        load_dataset_path, "main", split="test", trust_remote_code=True
-    )
+    dataset = load_dataset(load_dataset_path, "main", split="test")
     logger.info(f"Loaded dataset: {dataset}")
     data_list = [
         {
@@ -119,9 +117,7 @@ elif args.dataset_name == "GSM8K":
 # load AQUA-RAT dataset
 elif args.dataset_name == "AQUA-RAT":
     load_dataset_path = args.dataset_path if args.dataset_path else "deepmind/aqua_rat"
-    dataset = load_dataset(
-        load_dataset_path, "raw", split="test", trust_remote_code=True
-    )
+    dataset = load_dataset(load_dataset_path, "raw", split="test")
     logger.info(
         f"Loaded dataset: {dataset}"
     )  # question / options / rationale / correct
@@ -149,9 +145,7 @@ elif args.dataset_name == "MedMCQA":
     load_dataset_path = (
         args.dataset_path if args.dataset_path else "openlifescienceai/medmcqa"
     )
-    dataset = load_dataset(
-        load_dataset_path, split="validation", trust_remote_code=True
-    )
+    dataset = load_dataset(load_dataset_path, split="validation")
     filtered_dataset = dataset.filter(lambda example: example["choice_type"] != "multi")
     logger.info(f"Filtered dataset: {filtered_dataset}")
 
@@ -190,17 +184,19 @@ elif args.dataset_name == "MedQA":
     load_dataset_path = (
         args.dataset_path if args.dataset_path else "openlifescienceai/medqa"
     )
-    dataset = load_dataset(load_dataset_path, split="test", trust_remote_code=True)
+    dataset = load_dataset(load_dataset_path, split="test")
     logger.info(f"Loaded dataset: {dataset}")
 
     def format_medqa_query(example):
-        query = example["question"]
+        example = example["data"]
+        query = example["Question"]
         query += " Choose the correct answer from the following options:"
         for option in example["options"]:
             query += f"\n({option['key']}) {option['value']}"
         return query
 
     def format_medqa_gt(example):
+        example = example["data"]
         answer = f"The correct answer is: ({example['answer_idx']}) {example['answer']}"
         return answer
 
@@ -218,9 +214,7 @@ elif args.dataset_name == "MedQA":
 # load MMLU
 elif args.dataset_name == "MMLU":
     load_dataset_path = args.dataset_path if args.dataset_path else "cais/mmlu"
-    dataset = load_dataset(
-        load_dataset_path, "all", split="test", trust_remote_code=True
-    )
+    dataset = load_dataset(load_dataset_path, "all", split="test")
     logger.info(f"Loaded dataset: {dataset}")
 
     def format_mmlu_query(example):
@@ -253,7 +247,7 @@ Choose the correct answer from the following options:
 # load MMLU-Pro
 elif args.dataset_name == "MMLU-Pro":
     load_dataset_path = args.dataset_path if args.dataset_path else "TIGER-Lab/MMLU-Pro"
-    dataset = load_dataset(load_dataset_path, split="test", trust_remote_code=True)
+    dataset = load_dataset(load_dataset_path, split="test")
     logger.info(f"Loaded dataset: {dataset}")
     option_list = ["A", "B", "C", "D", "E", "F", "G", "H", "I", "J"]
 
@@ -286,7 +280,7 @@ elif args.dataset_name == "GSM-Hard":
     load_dataset_path = (
         args.dataset_path if args.dataset_path else "reasoning-machines/gsm-hard"
     )
-    dataset = load_dataset(load_dataset_path, split="train", trust_remote_code=True)
+    dataset = load_dataset(load_dataset_path, split="train")
     logger.info(f"Loaded dataset: {dataset}")
     data_list = [
         {
@@ -303,13 +297,9 @@ elif args.dataset_name == "GSM-Hard":
 elif args.dataset_name.startswith("GPQA"):
     load_dataset_path = args.dataset_path if args.dataset_path else "Idavidrein/gpqa"
     if args.dataset_name == "GPQA-Diamond":
-        dataset = load_dataset(
-            load_dataset_path, "gpqa_diamond", split="train", trust_remote_code=True
-        )
+        dataset = load_dataset(load_dataset_path, "gpqa_diamond", split="train")
     else:
-        dataset = load_dataset(
-            load_dataset_path, "gpqa_main", split="train", trust_remote_code=True
-        )
+        dataset = load_dataset(load_dataset_path, "gpqa_main", split="train")
     logger.info(f"Loaded dataset: {dataset}")
 
     def format_gpqa_query(example):
@@ -344,7 +334,7 @@ elif args.dataset_name.startswith("GPQA"):
 # load SciBench dataset
 elif args.dataset_name == "SciBench":
     load_dataset_path = args.dataset_path if args.dataset_path else "xw27/scibench"
-    dataset = load_dataset(load_dataset_path, split="train", trust_remote_code=True)
+    dataset = load_dataset(load_dataset_path, split="train")
     logger.info(f"Loaded dataset: {dataset}")
 
     def format_scibench_gt(example):
@@ -366,7 +356,7 @@ elif args.dataset_name == "AIME-2024":
     load_dataset_path = (
         args.dataset_path if args.dataset_path else "Maxwell-Jia/AIME_2024"
     )
-    dataset = load_dataset(load_dataset_path, split="train", trust_remote_code=True)
+    dataset = load_dataset(load_dataset_path, split="train")
     logger.info(f"Loaded dataset: {dataset}")
     data_list = [
         {
