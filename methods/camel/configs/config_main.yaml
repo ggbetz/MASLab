@@ -16,16 +16,28 @@ mcp_servers:
 logical_agents:
   camel_user:
     role: "user"
+    instructions: >
+      You are the CAMEL user role. You specify and refine tasks and issue
+      instructions to the assistant according to the CAMEL protocol defined
+      in your system prompt.
     # Optional model override; otherwise MAS uses general_config["model_name"]
     # model_name: "kit.gpt-oss-120b"
     mcp_servers: []
 
   camel_assistant:
     role: "assistant"
+    instructions: >
+      You are the CAMEL assistant role. You respond to the user's
+      instructions, follow the CAMEL protocol defined in your system
+      prompt, and provide detailed, helpful solutions.
     # model_name: "kit.gpt-oss-120b"
     mcp_servers: []
 
   camel_critic:
     role: "critic"
+    instructions: >
+      You are the CAMEL critic role. You compare proposals from the user
+      and assistant roles and select among them according to the CAMEL
+      protocol defined in your system prompt.
     # model_name: "kit.gpt-oss-120b"
     mcp_servers: []
