@@ -589,6 +589,9 @@ class MAS:
                     server = self._create_mcp_server(server_name, server_config)
                     per_sample[server_name] = server
 
+    async def get_sample_stats(self, sample_uid):
+        return self.sample_token_stats.pop(sample_uid, {})
+
     def optimizing(self, val_data):
         """For methods that requires validation data such as GPTSwarm and ADAS"""
         pass

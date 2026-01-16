@@ -164,6 +164,7 @@ async def run_sample(
     try:
         async with mas.sample_context(sample_uid):
             mas_output = await mas.inference(sample)
+            mas_output["stats"] = await mas.get_sample_stats(sample_uid)
         if "response" not in mas_output:
             raise ValueError(
                 f"The key 'response' is not found in the MAS output: {mas_output}"
