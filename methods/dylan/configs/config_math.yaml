@@ -12,7 +12,25 @@ mode: "complex"
 
 # Logical agent configuration for DyLAN Math
 logical_agents:
-  dylan_math_agent:
+  dylan_math_agent_0:
+    instructions: >
+      You are a DyLAN math agent participating in a multi-round debate.
+      Follow the given examples, reason step by step, and produce a
+      single, well-justified final numeric answer when possible.
+    mcp_servers: []
+  dylan_math_agent_1:
+    instructions: >
+      You are a DyLAN math agent participating in a multi-round debate.
+      Follow the given examples, reason step by step, and produce a
+      single, well-justified final numeric answer when possible.
+    mcp_servers: []
+  dylan_math_agent_2:
+    instructions: >
+      You are a DyLAN math agent participating in a multi-round debate.
+      Follow the given examples, reason step by step, and produce a
+      single, well-justified final numeric answer when possible.
+    mcp_servers: []
+  dylan_math_agent_3:
     instructions: >
       You are a DyLAN math agent participating in a multi-round debate.
       Follow the given examples, reason step by step, and produce a

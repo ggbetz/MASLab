@@ -57,7 +57,7 @@ class DyLAN_MATH(MAS):
         consensus = False
         for i, agent_context in enumerate(agent_contexts):
             completion = await self.call_llm_for_agent_async(
-                agent_id="dylan_math_agent", messages=agent_context
+                agent_id=f"dylan_math_agent_{i}", messages=agent_context
             )
 
             assistant_message = {"role": "assistant", "content": completion}
@@ -83,8 +83,9 @@ class DyLAN_MATH(MAS):
             agent_context.pop()
             agent_context.append({"role": "user", "content": message})
 
-            completion = await self.call_llm(messages=agent_context)
-
+            completion = await self.call_llm_for_agent_async(
+                agent_id=f"dylan_math_agent_{i}", messages=agent_context
+            )
             assistant_message = {"role": "assistant", "content": completion}
             agent_context.append(assistant_message)
             store_contexts[i].extend(agent_context[1:])
@@ -120,7 +121,7 @@ class DyLAN_MATH(MAS):
             agent_context.append({"role": "user", "content": message})
 
             completion = await self.call_llm_for_agent_async(
-                agent_id="dylan_math_agent", messages=agent_context
+                agent_id=f"dylan_math_agent_{i}", messages=agent_context
             )
 
             assistant_message = {"role": "assistant", "content": completion}
