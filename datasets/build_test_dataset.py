@@ -179,7 +179,7 @@ elif args.dataset_name == "MedMCQA":
             "query": format_medmcqa_query(example),
             "gt": format_medmcqa_gt(example),
             "tag": ["medical", example["subject_name"], example["topic_name"]],
-            "source": "MedMCQA",
+            "source": "openlifescienceai/medmcqa",
         }
         for example in cast(Any, filtered_dataset)
     ]
@@ -207,7 +207,7 @@ elif args.dataset_name == "MedQA":
             "query": format_medqa_query(example),
             "gt": format_medqa_gt(example),
             "tag": ["medical"],
-            "source": "MedQA",
+            "source": "openlifescienceai/medqa",
         }
         for example in cast(Any, dataset)
     ]
