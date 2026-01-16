@@ -117,7 +117,7 @@ async def main_async():
     )
     args = parser.parse_args()
     time = datetime.datetime.now().isoformat()
-    log_file = f"logs/inference_{args.tested_dataset_name}_{args.method_name}_{args.model_name}_{time}.log"
+    log_file = f"logs/inference_{args.tested_dataset_name}_{args.tested_method_name}_{args.tested_mas_model_name}_{time}.log"
     setup_logging(log_file=log_file)
 
     general_config = vars(args)
