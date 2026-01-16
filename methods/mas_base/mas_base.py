@@ -17,6 +17,7 @@ from agents import (
     Runner,
     TResponseInputItem,
     set_trace_processors,
+    set_tracing_disabled,
 )
 from agents.items import HandoffCallItem, ToolCallItem
 from agents.mcp import MCPServerStdio
@@ -26,7 +27,9 @@ from tenacity import retry, stop_after_attempt, wait_exponential
 
 from methods.utils import handle_retry_error, load_config
 
-set_trace_processors([])  # disable OpenAI tracing
+# disable OpenAI tracing
+set_trace_processors([])
+set_tracing_disabled(True)
 
 
 # Context variable for the current sample UID

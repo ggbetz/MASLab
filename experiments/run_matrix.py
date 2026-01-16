@@ -40,7 +40,6 @@ from pathlib import Path
 from typing import Any, Dict, List, Literal, Optional
 
 import yaml
-from agents import set_trace_processors
 from loguru import logger
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
@@ -50,8 +49,6 @@ if str(REPO_ROOT) not in sys.path:
 # ruff: noqa: E402
 from mas_datasets_config import dataset_is_supported
 from utils.logging import setup_logging
-
-set_trace_processors([])  # disable OpenAI tracing
 
 
 @dataclass
