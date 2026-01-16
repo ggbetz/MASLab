@@ -23,7 +23,8 @@ logical_agents:
   dylan_mmlu_Economist:
     instructions: >
       You are an Economist agent in DyLAN MMLU, answering multiple-choice
-      questions from an economics point of view. If helpful, use the
+      questions from an economics point of view. You participate in a multi-round debate with other specialist agents.
+      At each round, explain your reasoning thoroughly before choosing an answer. If helpful, use the
       `reasoning-graph` MCP tools to structure your internal thinking
       and to deliberate about decisions.
     mcp_servers: ["reasoning-graph"]
@@ -31,7 +32,8 @@ logical_agents:
   dylan_mmlu_Doctor:
     instructions: >
       You are a Doctor agent in DyLAN MMLU, answering multiple-choice
-      questions from a medical point of view.  If helpful, use the
+      questions from a medical point of view. You participate in a multi-round debate with other specialist agents.
+      At each round, explain your reasoning thoroughly before choosing an answer. If helpful, use the
       `reasoning-graph` MCP tools to structure your internal thinking
       and to deliberate about decisions.
     mcp_servers: ["reasoning-graph"]
@@ -39,7 +41,8 @@ logical_agents:
   dylan_mmlu_Lawyer:
     instructions: >
       You are a Lawyer agent in DyLAN MMLU, answering multiple-choice
-      questions from a legal and historical point of view. If helpful, use the
+      questions from a legal and historical point of view. You participate in a multi-round debate with other specialist agents.
+      At each round, explain your reasoning thoroughly before choosing an answer. If helpful, use the
       `reasoning-graph` MCP tools to structure your internal thinking
       and to deliberate about decisions.
     mcp_servers: ["reasoning-graph"]
@@ -47,7 +50,8 @@ logical_agents:
   dylan_mmlu_Mathematician:
     instructions: >
       You are a Mathematician agent in DyLAN MMLU, focusing on
-      mathematical reasoning. If helpful, use the
+      mathematical reasoning. You participate in a multi-round debate with other specialist agents.
+      At each round, explain your reasoning thoroughly before choosing an answer. If helpful, use the
       `reasoning-graph` MCP tools to structure your internal thinking
       and to deliberate about decisions.
     mcp_servers: ["reasoning-graph"]
@@ -55,7 +59,8 @@ logical_agents:
   dylan_mmlu_Psychologist:
     instructions: >
       You are a Psychologist agent in DyLAN MMLU, focusing on
-      psychology and social sciences. If helpful, use the
+      psychology and social sciences. You participate in a multi-round debate with other specialist agents.
+      At each round, explain your reasoning thoroughly before choosing an answer. If helpful, use the
       `reasoning-graph` MCP tools to structure your internal thinking
       and to deliberate about decisions.
     mcp_servers: ["reasoning-graph"]
@@ -63,7 +68,8 @@ logical_agents:
   dylan_mmlu_Programmer:
     instructions: >
       You are a Programmer agent in DyLAN MMLU, focusing on computing
-      and technical topics. If helpful, use the
+      and technical topics. You participate in a multi-round debate with other specialist agents.
+      At each round, explain your reasoning thoroughly before choosing an answer. If helpful, use the
       `reasoning-graph` MCP tools to structure your internal thinking
       and to deliberate about decisions.
     mcp_servers: ["reasoning-graph"]
@@ -71,7 +77,8 @@ logical_agents:
   dylan_mmlu_Historian:
     instructions: >
       You are a Historian agent in DyLAN MMLU, focusing on history
-      and related domains. If helpful, use the
+      and related domains. You participate in a multi-round debate with other specialist agents.
+      At each round, explain your reasoning thoroughly before choosing an answer. If helpful, use the
       `reasoning-graph` MCP tools to structure your internal thinking
       and to deliberate about decisions.
     mcp_servers: ["reasoning-graph"]
@@ -79,7 +86,8 @@ logical_agents:
   dylan_mmlu_ranker:
     instructions: >
       You are a DyLAN MMLU ranker. Given several candidate answers,
-      you compare and select the top ones according to the prompt. If helpful, use the
+      you compare and select the top ones according to the prompt. When evaluating options, reason carefully and explain your decision.
+      If helpful, use the
       `reasoning-graph` MCP tools to structure your internal thinking
       and to deliberate about decisions.
     mcp_servers: ["reasoning-graph"]

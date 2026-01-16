@@ -207,8 +207,11 @@ class DyLAN_MMLU(MAS):
         return {"role": "user", "content": prefix_string}
 
     def get_context(self, node_idx):
-        sys_prompt = ROLE_MAP[self.nodes[node_idx]["role"]] + "\n" + SYSTEM_PROMPT_MMLU
-        contexts = [{"role": "system", "content": sys_prompt}]
+        # System behavior for each role is now defined in the logical agent
+        # instructions in config_mmlu*.yaml. We no longer construct a
+        # per-call system prompt here and instead rely on those
+        # configuration-level instructions.
+        contexts = []
 
         formers = [
             (self.nodes[edge["a1"]]["reply"], eid)

@@ -24,14 +24,6 @@ class DyLAN_MATH(MAS):
         self.num_agents = self.method_config.get("num_agents", 4)
         self.mode = self.method_config.get("mode", "complex")  # simple or complex
         self.examples = get_examples(self.mode)
-        self.system_prompt = (
-            "It's a debate. Explain your reasons at each round thoroughly."
-        )
-
-        if self.mode == "complex":
-            self.system_prompt += (
-                "\nFollow the given examples and answer the mathematics problem."
-            )
 
     async def inference(self, sample) -> dict[str, str]:
         query = sample["query"]
@@ -42,16 +34,12 @@ class DyLAN_MATH(MAS):
         # Initialize agent contexts
         agent_contexts = [
             [
-                {"role": "system", "content": self.system_prompt},
                 {"role": "user", "content": question},
             ]
             for _ in range(self.num_agents)
         ]
 
-        store_contexts = [
-            [{"role": "system", "content": self.system_prompt}]
-            for _ in range(self.num_agents)
-        ]
+        store_contexts = [[] for _ in range(self.num_agents)]
 
         # First round: each agent provides an initial solution
         consensus = False
