@@ -187,7 +187,9 @@ elif args.dataset_name == "MedMCQA":
 
 # load MedQA
 elif args.dataset_name == "MedQA":
-    load_dataset_path = args.dataset_path if args.dataset_path else "bigbio/med_qa"
+    load_dataset_path = (
+        args.dataset_path if args.dataset_path else "openlifescienceai/medqa"
+    )
     dataset = load_dataset(load_dataset_path, split="test", trust_remote_code=True)
     logger.info(f"Loaded dataset: {dataset}")
 
