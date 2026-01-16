@@ -201,8 +201,9 @@ async def main_async():
                 if not sample["eval_content"].startswith("Eval Error")
             ]
         )
+        accuracy = valid_correct_num / num_valid * 100 if num_valid else 0
         logger.info(
-            f"Evaluation completed - Total: {sample_num} | Valid: {num_valid} | Correct: {valid_correct_num} | Accuracy: {valid_correct_num / num_valid * 100:.2f}%"
+            f"Evaluation completed - Total: {sample_num} | Valid: {num_valid} | Correct: {valid_correct_num} | Accuracy: {accuracy:.2f}%"
         )
         logger.info(
             f"Excluding eval errors - Valid: {num_exclude_eval_error} | Accuracy: {valid_correct_num / num_exclude_eval_error * 100:.2f}%"
