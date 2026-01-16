@@ -1,0 +1,172 @@
+# Example experiment matrix configuration for MASLab
+
+api_config: .secrets/model_api_config.json
+
+# Default evaluation LLM and protocol (can be overridden per-experiment)
+# This is the verifier model, separate from MAS/inference models.
+eval_model: xverify-32b-i
+eval_protocol: xverify
+
+# Global method groups that can be referenced by datasets
+method_groups:
+  core_methods:
+    - method: cot
+    - method: cot
+      config: config_mcp
+    - method: camel
+    - method: camel
+      config: config_mcp
+    - method: llm_debate
+    - method: llm_debate
+      config: config_mcp
+    - method: mad
+    - method: mad
+      config: config_mcp
+    - method: self_consistency
+    - method: self_consistency
+      config: config_mcp
+  agentverse_with_standard_configs:
+    - method: agentverse
+    - method: agentverse
+      config: config_mcp_all
+    - method: agentverse
+      config: config_mcp_partial
+  dylan_with_standard_configs:
+    - method: dylan
+    - method: dylan
+      config: config_mcp
+  mav_with_standard_configs:
+    - method: mav
+    - method: mav
+      config: config_mcp
+
+# Default flags applied if not overridden below
+defaults:
+  # Passed to datasets/build_test_dataset.py
+  build:
+    num2sample: 500
+  # Passed to inference.py
+  inference:
+    require_val: false
+    sequential: false
+    agent_config_mode: strict # global defaul
+  # Passed to evaluate.py
+  evaluate:
+    overwrite: false
+    sequential: false
+
+# List of datasets and their method+config combinations
+# Each dataset can optionally override default settings.
+datasets:
+  - name: AIME-2024
+    method_groups:
+      - core_methods
+      - agentverse_with_standard_configs
+      - dylan_with_standard_configs
+      - mav_with_standard_configs
+
+  - name: AIME-2025
+    method_groups:
+      - core_methods
+      - agentverse_with_standard_configs
+      - dylan_with_standard_configs
+      - mav_with_standard_configs
+
+  - name: APEX-SHORTLIST
+    method_groups:
+      - core_methods
+      - agentverse_with_standard_configs
+      - dylan_with_standard_configs
+      - mav_with_standard_configs
+
+  - name: AQUA-RAT
+    method_groups:
+      - core_methods
+      - agentverse_with_standard_configs
+      - dylan_with_standard_configs
+      - mav_with_standard_configs
+
+  - name: GSM8K
+    method_groups:
+      - core_methods
+      - dylan_with_standard_configs
+      - mav_with_standard_configs
+    methods:
+      - method: agentverse_mgsm
+        config: config_mgsm
+      - method: agentverse_mgsm
+        config: config_mgsm_mcp_all
+      - method: agentverse_mgsm
+        config: config_mgsm_mcp_partial
+
+  - name: GSM-Hard
+    method_groups:
+      - core_methods
+      - dylan_with_standard_configs
+      - mav_with_standard_configs
+    methods:
+      - method: agentverse_mgsm
+        config: config_mgsm
+      - method: agentverse_mgsm
+        config: config_mgsm_mcp_all
+      - method: agentverse_mgsm
+        config: config_mgsm_mcp_partial
+
+  - name: MATH
+    method_groups:
+      - core_methods
+      - agentverse_with_standard_configs
+    methods:
+      - method: dylan_math
+        config: config_math
+      - method: dylan_math
+        config: config_math_mcp
+      - method: mav_math
+      - method: mav_math
+        config: config_mcp
+
+  - name: MedMCQA
+    method_groups:
+      - core_methods
+      - agentverse_with_standard_configs
+      - dylan_with_standard_configs
+      - mav_with_standard_configs
+
+  - name: MedQA
+    method_groups:
+      - core_methods
+      - agentverse_with_standard_configs
+      - dylan_with_standard_configs
+      - mav_with_standard_configs
+
+  - name: MMLU
+    method_groups:
+      - core_methods
+      - agentverse_with_standard_configs
+    methods:
+      - method: dylan_mmlu
+        config: config_mmlu
+      - method: dylan_mmlu
+        config: config_mmlu_mcp
+      - method: mav_mmlu
+      - method: mav_mmlu
+        config: config_mcp
+
+  - name: MMLU-Pro
+    method_groups:
+      - core_methods
+      - agentverse_with_standard_configs
+
+  - name: SciBench
+    method_groups:
+      - core_methods
+      - agentverse_with_standard_configs
+      - dylan_with_standard_configs
+      - mav_with_standard_configs
+
+# List of MAS (inference) models to sweep for every dataset/method combo
+inference_models:
+  - devstral-small-2
+
+# Optional: override eval model or protocol for specific datasets or methods
+# (not used in this initial example, but supported by run_matrix.py)
