@@ -86,6 +86,26 @@ datasets:
       - dylan_with_standard_configs
       - mav_with_standard_configs
 
+  - name: GPQA
+    method_groups:
+      - core_methods
+      - agentverse_with_standard_configs
+      - dylan_with_standard_configs
+    methods:
+      - method: mav_gpqa
+      - method: mav_gpqa
+        config: config_mcp
+
+  - name: GPQA-Diamond
+    method_groups:
+      - core_methods
+      - agentverse_with_standard_configs
+      - dylan_with_standard_configs
+    methods:
+      - method: mav_gpqa
+      - method: mav_gpqa
+        config: config_mcp
+
   - name: GSM8K
     method_groups:
       - core_methods
