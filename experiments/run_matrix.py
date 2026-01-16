@@ -320,8 +320,37 @@ def run_scheduler(
     active_infer: Optional[InferJob] = None
     active_eval: Optional[EvalJob] = None
 
+    infer_index: Dict[tuple[str, str, Optional[str], str], InferJob] = {
+        (j.dataset, j.method, j.config_name, j.mas_model): j for j in infer_jobs
+    }
+
     def all_done(jobs: List[InferJob] | List[EvalJob]) -> bool:
         return all(j.status in ("done", "skipped", "failed") for j in jobs)
+
+    def eval_ready(job: EvalJob) -> bool:
+        if args.dry_run:
+            return True
+
+        key = (job.dataset, job.method, job.config_name, job.mas_model)
+        infer_job = infer_index.get(key)
+
+        if infer_job is not None:
+            if infer_job.status == "done":
+                return True
+            if infer_job.status in ("failed", "skipped"):
+                if job.status == "pending":
+                    job.status = "skipped"
+                    logger.warning(
+                        "[eval] skip: infer job status is {} for {}",
+                        infer_job.status,
+                        infer_job.infer_path,
+                    )
+                return False
+            # Inference job is still pending or running
+            return False
+
+        # No infer job scheduled in this run; fall back to file existence
+        return job.infer_path.exists()
 
     if not infer_jobs and not eval_jobs:
         logger.info("No inference or evaluation jobs to run.")
@@ -384,11 +413,7 @@ def run_scheduler(
         # Start new evaluation job if none running
         if active_eval is None and args.only in (None, "eval"):
             next_eval = next(
-                (
-                    j
-                    for j in eval_jobs
-                    if j.status == "pending" and (args.dry_run or j.infer_path.exists())
-                ),
+                (j for j in eval_jobs if j.status == "pending" and eval_ready(j)),
                 None,
             )
             if next_eval is not None:
