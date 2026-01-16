@@ -46,6 +46,8 @@ REPO_ROOT = Path(__file__).resolve().parents[1]
 if str(REPO_ROOT) not in sys.path:
     sys.path.insert(0, str(REPO_ROOT))
 
+# ruff: noqa: E402
+from mas_datasets_config import dataset_is_supported
 from utils.logging import setup_logging
 
 
@@ -123,6 +125,22 @@ def _parse_dataset_method(m: Dict[str, Any]) -> DatasetMethod:
         config=m.get("config"),
         inference=m.get("inference"),
     )
+
+
+def validate_matrix(matrix: MatrixConfig) -> None:
+    errors: list[str] = []
+
+    # dataset existence check
+    for ds in matrix.datasets:
+        if not dataset_is_supported(ds.name):
+            errors.append(
+                f"Dataset '{ds.name}' not supported by datasets/build_test_dataset.py"
+            )
+
+    if errors:
+        for error in errors:
+            logger.error(error)
+        raise ValueError("Matrix validation failed")
 
 
 def load_yaml_config(path: Path) -> MatrixConfig:
@@ -430,6 +448,7 @@ def main(argv: Optional[List[str]] = None) -> int:
     setup_logging()
 
     matrix = load_yaml_config(cfg_path)
+    validate_matrix(matrix)
 
     defaults_build = matrix.defaults.get("build", {}) if matrix.defaults else {}
     defaults_infer = matrix.defaults.get("inference", {}) if matrix.defaults else {}

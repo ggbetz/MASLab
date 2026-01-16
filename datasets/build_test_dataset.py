@@ -2,10 +2,20 @@ import argparse
 import json
 import os
 import random
+import sys
+from pathlib import Path
 from typing import Any, cast
 
-from datasets import load_dataset
+# Add repo root to path for imports
+REPO_ROOT = Path(__file__).resolve().parents[1]
+if str(REPO_ROOT) not in sys.path:
+    sys.path.insert(0, str(REPO_ROOT))
+
+# ruff: noqa: E402
 from loguru import logger
+
+from datasets import load_dataset
+from mas_datasets_config import SUPPORTED_DATASETS, dataset_is_supported
 from utils.logging import setup_logging
 
 parser = argparse.ArgumentParser()
@@ -23,25 +33,16 @@ args = parser.parse_args()
 # Setup logging
 setup_logging()
 
+# Validate dataset name early
+if not dataset_is_supported(args.dataset_name):
+    raise ValueError(f"Dataset {args.dataset_name} not supported.")
+
 # List available datasets if --list-avail flag is used
 if args.list_avail:
-    available_datasets = [
-        "MATH",
-        "GSM8K",
-        "AQUA-RAT",
-        "MedMCQA",
-        "MedQA",
-        "MMLU",
-        "MMLU-Pro",
-        "GSM-Hard",
-        "SciBench",
-        "AIME-2024",
-        "AIME-2025",
-        "APEX-SHORTLIST",
-    ]
     logger.info("Available datasets:")
-    for dataset in available_datasets:
+    for dataset in sorted(SUPPORTED_DATASETS):
         logger.info(f"  - {dataset}")
+    logger.info("  - GPQA* (any name starting with 'GPQA')")
     exit()
 
 save_path = os.path.join(
@@ -50,6 +51,9 @@ save_path = os.path.join(
 
 # Create data directory if it doesn't exist
 os.makedirs(os.path.dirname(save_path), exist_ok=True)
+
+# Initialize data_list (will be populated by dataset-specific branches)
+data_list: list = []
 
 
 def shuffle_and_sample(data_list, num2sample):
@@ -408,8 +412,7 @@ elif args.dataset_name == "APEX-SHORTLIST":
     data_list = shuffle_and_sample(data_list, args.num2sample)
 
 
-else:
-    raise ValueError(f"Dataset {args.dataset_name} not supported.")
+# data_list should be defined by one of the dataset branches above
 
 sample_pool = deduplicate(data_list)
 logger.info(f"Data sample from pool: {sample_pool[0]}")
