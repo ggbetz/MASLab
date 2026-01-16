@@ -2,6 +2,7 @@
 
 import argparse
 import asyncio
+import datetime
 import json
 import os
 import traceback
@@ -243,7 +244,9 @@ async def run_full_inference(
 
 async def main_async() -> None:
     args = parse_args()
-    setup_logging()
+    time = datetime.datetime.now().isoformat()
+    log_file = f"logs/inference_{args.test_dataset_name}_{args.method_name}_{args.model_name}_{time}.log"
+    setup_logging(log_file=log_file)
     general_config = build_general_config(args)
     mas = create_mas(args, general_config)
 
