@@ -299,6 +299,22 @@ def build_output_path(
     return REPO_ROOT / "results" / dataset / mas_model / file_name
 
 
+def build_infer_done_path(infer_path: Path) -> Path:
+    """Return the sidecar ".done" marker path for an inference output file."""
+    return infer_path.with_suffix(infer_path.suffix + ".done")
+
+
+def infer_output_complete(infer_path: Path) -> bool:
+    """Return True if the inference output has a corresponding .done marker.
+
+    This relies on inference.py's behavior of creating `<output>.done` only after
+    successfully processing all samples. For legacy runs that predate the .done
+    convention, callers may still want to fall back to `infer_path.exists()`.
+    """
+    done_path = build_infer_done_path(infer_path)
+    return infer_path.exists() and done_path.exists()
+
+
 def parse_bool_flag(raw: Any, default: bool) -> bool:
     if raw is None:
         return default
@@ -335,7 +351,8 @@ def run_scheduler(
         infer_job = infer_index.get(key)
 
         if infer_job is not None:
-            if infer_job.status == "done":
+            # Prefer file-based completion (using .done marker) over in-memory status.
+            if infer_output_complete(infer_job.infer_path):
                 return True
             if infer_job.status in ("failed", "skipped"):
                 if job.status == "pending":
@@ -346,97 +363,119 @@ def run_scheduler(
                         infer_job.infer_path,
                     )
                 return False
-            # Inference job is still pending or running
+            # Inference job is still pending or running and has not produced a
+            # complete output yet.
             return False
 
-        # No infer job scheduled in this run; fall back to file existence
+        # No infer job scheduled in this run; fall back to file-based completion
+        # for legacy runs, where only the raw infer file may exist.
+        if infer_output_complete(job.infer_path):
+            return True
         return job.infer_path.exists()
 
     if not infer_jobs and not eval_jobs:
         logger.info("No inference or evaluation jobs to run.")
         return 0
 
-    while True:
-        if all_done(infer_jobs) and all_done(eval_jobs):
-            break
+    try:
+        while True:
+            if all_done(infer_jobs) and all_done(eval_jobs):
+                break
 
-        # Check running inference
+            # Check running inference
+            if active_infer is not None:
+                # Prefer file-based completion via .done marker: if the output is
+                # complete, we treat the job as done and do not inspect the process
+                # state here.
+                if infer_output_complete(active_infer.infer_path):
+                    active_infer.status = "done"
+                    active_infer = None
+
+            # Check running evaluation
+            if active_eval is not None and active_eval.proc is not None:
+                rc = active_eval.proc.poll()
+                if rc is not None:
+                    if rc == 0:
+                        active_eval.status = "done"
+                    else:
+                        active_eval.status = "failed"
+                        logger.error(
+                            "[eval] job failed: {} (rc={})", active_eval.eval_path, rc
+                        )
+                    active_eval.proc = None
+                    active_eval = None
+
+            # Start new inference job if none running
+            if active_infer is None and args.only in (None, "infer", "eval"):
+                next_infer = next(
+                    (j for j in infer_jobs if j.status == "pending"), None
+                )
+                if next_infer is not None:
+                    cmd = build_infer_cmd(
+                        next_infer.dataset,
+                        next_infer.method,
+                        next_infer.config_name,
+                        next_infer.mas_model,
+                        matrix.api_config,
+                        infer_cfg,
+                        next_infer.agent_config_mode,
+                    )
+                    logger.info("[infer] {}", " ".join(cmd))
+                    if args.dry_run:
+                        next_infer.status = "done"
+                    else:
+                        next_infer.infer_path.parent.mkdir(parents=True, exist_ok=True)
+                        next_infer.proc = subprocess.Popen(cmd, cwd=REPO_ROOT)
+                        next_infer.status = "running"
+                        active_infer = next_infer
+
+            # Start new evaluation job if none running
+            if active_eval is None and args.only in (None, "eval"):
+                next_eval = next(
+                    (j for j in eval_jobs if j.status == "pending" and eval_ready(j)),
+                    None,
+                )
+                if next_eval is not None:
+                    cmd = build_eval_cmd(
+                        next_eval.dataset,
+                        next_eval.method,
+                        next_eval.config_name,
+                        next_eval.mas_model,
+                        matrix.api_config,
+                        matrix.eval_model,
+                        matrix.eval_protocol,
+                        eval_cfg,
+                    )
+                    logger.info("[eval] {}", " ".join(cmd))
+                    if args.dry_run:
+                        next_eval.status = "done"
+                    else:
+                        next_eval.eval_path.parent.mkdir(parents=True, exist_ok=True)
+                        next_eval.proc = subprocess.Popen(cmd, cwd=REPO_ROOT)
+                        next_eval.status = "running"
+                        active_eval = next_eval
+
+            time.sleep(1)
+    finally:
+        # Final cleanup: best-effort polling of any remaining child processes.
         if active_infer is not None and active_infer.proc is not None:
             rc = active_infer.proc.poll()
-            if rc is not None:
-                if rc == 0:
-                    active_infer.status = "done"
-                else:
-                    active_infer.status = "failed"
-                    logger.error(
-                        "[infer] job failed: {} (rc={})", active_infer.infer_path, rc
-                    )
-                active_infer.proc = None
-                active_infer = None
-
-        # Check running evaluation
+            if rc not in (None, 0):
+                logger.error(
+                    "[infer] job completed but process exited with rc={} for {}",
+                    rc,
+                    active_infer.infer_path,
+                )
+            active_infer.proc = None
         if active_eval is not None and active_eval.proc is not None:
             rc = active_eval.proc.poll()
-            if rc is not None:
-                if rc == 0:
-                    active_eval.status = "done"
-                else:
-                    active_eval.status = "failed"
-                    logger.error(
-                        "[eval] job failed: {} (rc={})", active_eval.eval_path, rc
-                    )
-                active_eval.proc = None
-                active_eval = None
-
-        # Start new inference job if none running
-        if active_infer is None and args.only in (None, "infer", "eval"):
-            next_infer = next((j for j in infer_jobs if j.status == "pending"), None)
-            if next_infer is not None:
-                cmd = build_infer_cmd(
-                    next_infer.dataset,
-                    next_infer.method,
-                    next_infer.config_name,
-                    next_infer.mas_model,
-                    matrix.api_config,
-                    infer_cfg,
-                    next_infer.agent_config_mode,
+            if rc not in (None, 0):
+                logger.error(
+                    "[eval] process exited with rc={} for {}",
+                    rc,
+                    active_eval.eval_path,
                 )
-                logger.info("[infer] {}", " ".join(cmd))
-                if args.dry_run:
-                    next_infer.status = "done"
-                else:
-                    next_infer.infer_path.parent.mkdir(parents=True, exist_ok=True)
-                    next_infer.proc = subprocess.Popen(cmd, cwd=REPO_ROOT)
-                    next_infer.status = "running"
-                    active_infer = next_infer
-
-        # Start new evaluation job if none running
-        if active_eval is None and args.only in (None, "eval"):
-            next_eval = next(
-                (j for j in eval_jobs if j.status == "pending" and eval_ready(j)),
-                None,
-            )
-            if next_eval is not None:
-                cmd = build_eval_cmd(
-                    next_eval.dataset,
-                    next_eval.method,
-                    next_eval.config_name,
-                    next_eval.mas_model,
-                    matrix.api_config,
-                    matrix.eval_model,
-                    matrix.eval_protocol,
-                    eval_cfg,
-                )
-                logger.info("[eval] {}", " ".join(cmd))
-                if args.dry_run:
-                    next_eval.status = "done"
-                else:
-                    next_eval.eval_path.parent.mkdir(parents=True, exist_ok=True)
-                    next_eval.proc = subprocess.Popen(cmd, cwd=REPO_ROOT)
-                    next_eval.status = "running"
-                    active_eval = next_eval
-
-        time.sleep(1)
+            active_eval.proc = None
 
     return 0
 
@@ -548,8 +587,25 @@ def main(argv: Optional[List[str]] = None) -> int:
 
             # Inference jobs
             if args.only in {None, "infer", "eval"}:
-                if infer_path.exists():
-                    logger.info("[infer] skip (exists): {}", infer_path)
+                if infer_output_complete(infer_path):
+                    logger.info("[infer] skip (done): {}", infer_path)
+                elif infer_path.exists():
+                    # Legacy or incomplete output without a .done marker; schedule a
+                    # new run to bring it to a consistent state.
+                    logger.info(
+                        "[infer] existing output without .done marker; scheduling rerun: {}",
+                        infer_path,
+                    )
+                    infer_jobs.append(
+                        InferJob(
+                            dataset=dataset,
+                            method=method,
+                            config_name=config_name,
+                            mas_model=mas_model,
+                            infer_path=infer_path,
+                            agent_config_mode=method_infer_cfg.agent_config_mode,
+                        )
+                    )
                 else:
                     infer_jobs.append(
                         InferJob(

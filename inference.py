@@ -143,6 +143,11 @@ def build_output_path(
     return f"./results/{test_dataset_name}/{model_name}/{file_name}"
 
 
+def build_done_marker_path(output_path: str) -> str:
+    """Return the sidecar ".done" marker path for a given output file."""
+    return f"{output_path}.done"
+
+
 def create_mas(args: argparse.Namespace, general_config: Dict[str, Any]):
     mas_method = get_method_class(args.method_name, args.test_dataset_name)
     return mas_method(general_config, method_config_name=args.method_config_name)
@@ -215,6 +220,12 @@ async def run_full_inference(
     )
     os.makedirs(os.path.dirname(output_path), exist_ok=True)
 
+    # Ensure any stale .done marker from a previous run is removed before starting.
+    done_marker_path = build_done_marker_path(output_path)
+    if os.path.exists(done_marker_path):
+        logger.info(">> Removing stale done marker: {}", done_marker_path)
+        os.remove(done_marker_path)
+
     test_dataset = reserve_unprocessed_queries(output_path, test_dataset)
     logger.info(f">> After filtering: {len(test_dataset)} samples")
 
@@ -240,6 +251,15 @@ async def run_full_inference(
             desc="Processing queries",
         ):
             await coro
+
+    # At this point, all samples have been processed successfully; create the .done marker.
+    try:
+        with open(done_marker_path, "w") as f:
+            f.write("")
+        logger.info(">> Created done marker: {}", done_marker_path)
+    except Exception as e:
+        # Log marker creation issues but do not treat them as fatal for the inference run itself.
+        logger.error("Failed to create done marker {}: {}", done_marker_path, e)
 
 
 async def main_async() -> None:
