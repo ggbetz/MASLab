@@ -52,6 +52,13 @@ class CAMEL_Main(MAS):
         return _CompletionLike(choices=choices)
 
     async def inference(self, sample):
+        """Run CAMEL-style multi-agent interaction for a single sample.
+
+        This implementation is hardened against invalid critic option selections
+        by clamping the critic's choice to the available number of proposals and
+        by using a fresh critic judgment for assistant proposals instead of
+        reusing a previous response.
+        """
         query = sample["query"]
 
         # Task specification phase: use user agent
@@ -123,10 +130,13 @@ class CAMEL_Main(MAS):
                     {"role": "assistant", "content": critic_response}
                 )
                 selected_option = self.find_option(critic_response)
-                if selected_option is None:
+                max_user_index = len(user_completion.choices)
+                if not selected_option or not (1 <= selected_option <= max_user_index):
                     selected_option = 1
                 selected_user_response = getattr(
-                    user_completion.choices[selected_option - 1].message, "content", ""
+                    user_completion.choices[selected_option - 1].message,
+                    "content",
+                    "",
                 )
 
                 # Assistant multiple-choice based on selected user response
@@ -150,8 +160,15 @@ class CAMEL_Main(MAS):
                 self.critic_messages.append(
                     {"role": "user", "content": assistant_response}
                 )
+                critic_response = await self.call_llm_for_agent_async(
+                    agent_id="camel_critic", messages=self.critic_messages
+                )
+                response += f"Critic Message (assistant): \n{critic_response}\n\n"
                 selected_option = self.find_option(critic_response)
-                if selected_option is None:
+                max_assistant_index = len(assistant_completion.choices)
+                if not selected_option or not (
+                    1 <= selected_option <= max_assistant_index
+                ):
                     selected_option = 1
                 selected_assistant_response = getattr(
                     assistant_completion.choices[selected_option - 1].message,
