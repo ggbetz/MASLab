@@ -2,6 +2,7 @@
 
 import os
 from contextvars import ContextVar
+from typing import cast
 
 # Suppress MCP server verbose logging
 os.environ.setdefault("MCP_LOG_LEVEL", "ERROR")
@@ -14,6 +15,7 @@ from agents import (
     OpenAIChatCompletionsModel,
     RunConfig,
     Runner,
+    TResponseInputItem,
     set_trace_processors,
 )
 from agents.items import HandoffCallItem, ToolCallItem
@@ -131,6 +133,7 @@ class MAS:
         model_name=None,
         temperature=None,
         sample_uid=None,
+        no_cache=False,
     ):
         """Async core LLM call that supports logical agents.
 
@@ -160,10 +163,6 @@ class MAS:
             else:
                 messages = [{"role": "user", "content": prompt}]
 
-        # Build a simple transcript; later this can be replaced with
-        # structured items if needed.
-        transcript = "\n".join(f"{m['role']}: {m['content']}" for m in messages)
-
         # Temperature is passed via RunConfig.model_settings
         effective_temperature = (
             temperature if temperature is not None else self.model_temperature
@@ -186,7 +185,14 @@ class MAS:
         model_settings = ModelSettings(temperature=effective_temperature)
         run_config = RunConfig(model_settings=model_settings)
 
-        result = await Runner.run(agent, transcript, run_config=run_config)
+        try:
+            response_input = cast(list[TResponseInputItem], messages)
+            result = await Runner.run(agent, response_input, run_config=run_config)
+        except Exception:
+            # Try with a simple transcript
+            transcript = "\n".join(f"{m['role']}: {m['content']}" for m in messages)
+            result = await Runner.run(agent, transcript, run_config=run_config)
+
         response = result.final_output
 
         if not isinstance(response, str):
@@ -277,12 +283,6 @@ class MAS:
         Returns:
             Agent instance from the OpenAI Agents SDK
         """
-        # For MCP-enabled methods, distinguish agents by sample_uid as well
-        uses_mcp = (
-            hasattr(self, "method_config")
-            and "logical_agents" in self.method_config
-            and "mcp_servers" in self.method_config
-        )
 
         # If a logical_agents block is present, optionally enforce that the
         # requested agent_id is configured there. This avoids silent fallback
@@ -300,10 +300,7 @@ class MAS:
                 elif mode == "warn":
                     logger.warning(msg)
 
-        if uses_mcp:
-            cache_key = f"{agent_id}:{model_name}:{sample_uid}"
-        else:
-            cache_key = f"{agent_id}:{model_name}"
+        cache_key = f"{agent_id}:{model_name}:{sample_uid}"
 
         if cache_key not in self._logical_agents:
             # Check if there's a specific configuration for this agent
@@ -466,6 +463,9 @@ class MAS:
                 # Clean up per-sample token stats now that processing is done
                 if self._sample_uid is not None:
                     self._mas.sample_token_stats.pop(self._sample_uid, None)
+
+                # TODO
+                # Clean-up self._logical_agents, removing agents associated with this sample
 
     def sample_context(self, sample_uid: str | None):
         """Return an async context manager for the given sample UID."""
