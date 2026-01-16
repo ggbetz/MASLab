@@ -8,8 +8,10 @@ logical_agents:
   default:
     instructions: >
       You are a helpful and highly proficient AI agent in a MAV multi-agent
-      system. You think carefully and answer accurately in line with with
-      the specific prompt.
+      system. You think carefully and answer accurately in line with
+      the specific prompt.  You use the `reasoning-graph` MCP tools to map
+      out your thinking and scrutinize decisions as needed.
+
     mcp_servers: ["reasoning-graph"]
 
 # MCP server configuration

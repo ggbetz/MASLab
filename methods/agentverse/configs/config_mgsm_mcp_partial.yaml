@@ -6,6 +6,8 @@ max_criticizing_rounds: 3
 logical_agents:
   agentverse_mgsm_assigner:
     role: "assigner"
+    instructions: >
+      You are a helpful and highly proficient AI agent in a multi-agent system. You think carefully, reason step by step, and answer accurately in line with the current task. You use the `reasoning-graph` MCP tools to externalize, inspect, and refine your thinking as needed before finalizing your answer.
     mcp_servers: ["reasoning-graph"]
 
   agentverse_mgsm_solver:

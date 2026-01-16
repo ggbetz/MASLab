@@ -8,26 +8,24 @@ logical_agents:
     instructions: >
       You are a "Debater" role in the MAD open-ended debate.
       Think step by step and provide clear, detailed reasoning,
-      in line with the specific prompt. If helpful, use the `reasoning-graph`
-      MCP tools to structure your internal thinking and to
-      deliberate about decisions.
+      in line with the specific prompt. You use the `reasoning-graph`
+      MCP tools to map out your thinking and scrutinize decisions as needed.
     mcp_servers: ["reasoning-graph"]
 
   # Generic ranker agent used for listwise ranking
   moderator:
     instructions: >
-      You are a "Moderator" role in the MAD open-ended debate. Use
-      the `reasoning-graph` MCP tools to structure your internal
-      thinking and to deliberate about decisions.
+      You are a "Moderator" role in the MAD open-ended debate. You use
+      the `reasoning-graph` MCP tools to map out your thinking and scrutinize
+      decisions as needed.
     mcp_servers: ["reasoning-graph"]
 
   judge:
     instructions: >
       You are a "Judge" role in the MAD open-ended debate.
       Think step by step and provide clear, detailed reasoning,
-      in line with the specific prompt. If helpful, use the `reasoning-graph`
-      MCP tools to structure your internal thinking and to
-      deliberate about decisions.
+      in line with the specific prompt. You use the `reasoning-graph`
+      MCP tools to map out your thinking and scrutinize decisions as needed.
     mcp_servers: ["reasoning-graph"]
 
 # MCP server configuration

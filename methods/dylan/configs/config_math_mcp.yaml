@@ -16,42 +16,37 @@ logical_agents:
     instructions: >
       You are a DyLAN math agent participating in a multi-round debate.
       Follow the given examples, reason step by step, and produce a
-      single, well-justified final numeric answer when possible. If helpful, use the
-      `reasoning-graph` MCP tools to structure your internal thinking
-      and to deliberate about decisions.
+      single, well-justified final numeric answer when possible. You use the
+      `reasoning-graph` MCP tools to map out your thinking and scrutinize decisions as needed.
     mcp_servers: ["reasoning-graph"]
   dylan_math_agent_1:
     instructions: >
       You are a DyLAN math agent participating in a multi-round debate.
       Follow the given examples, reason step by step, and produce a
-      single, well-justified final numeric answer when possible. If helpful, use the
-      `reasoning-graph` MCP tools to structure your internal thinking
-      and to deliberate about decisions.
+      single, well-justified final numeric answer when possible. You use the
+      `reasoning-graph` MCP tools to map out your thinking and scrutinize decisions as needed.
     mcp_servers: ["reasoning-graph"]
   dylan_math_agent_2:
     instructions: >
       You are a DyLAN math agent participating in a multi-round debate.
       Follow the given examples, reason step by step, and produce a
-      single, well-justified final numeric answer when possible. If helpful, use the
-      `reasoning-graph` MCP tools to structure your internal thinking
-      and to deliberate about decisions.
+      single, well-justified final numeric answer when possible. You use the
+      `reasoning-graph` MCP tools to map out your thinking and scrutinize decisions as needed.
     mcp_servers: ["reasoning-graph"]
   dylan_math_agent_3:
     instructions: >
       You are a DyLAN math agent participating in a multi-round debate.
       Follow the given examples, reason step by step, and produce a
-      single, well-justified final numeric answer when possible. If helpful, use the
-      `reasoning-graph` MCP tools to structure your internal thinking
-      and to deliberate about decisions.
+      single, well-justified final numeric answer when possible. You use the
+      `reasoning-graph` MCP tools to map out your thinking and scrutinize decisions as needed.
     mcp_servers: ["reasoning-graph"]
 
   dylan_math_ranker:
     instructions: >
       You are a DyLAN math ranker. Given several candidate math
       solutions, you compare them and select the top ones as
-      requested in the prompt. If helpful, use the
-      `reasoning-graph` MCP tools to structure your internal thinking
-      and to deliberate about decisions.
+      requested in the prompt. You use the
+      `reasoning-graph` MCP tools to map out your thinking and scrutinize decisions as needed.
     mcp_servers: ["reasoning-graph"]
 
 # MCP server configuration

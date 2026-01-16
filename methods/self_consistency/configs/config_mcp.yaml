@@ -5,8 +5,8 @@ logical_agents:
   default:
     # Optional but recommended: make instructions explicit
     instructions: >
-      You are a helpful and highly proficient AI agent. If helpful, use the `reasoning-graph`
-      MCP tools to structure your internal thinking and to deliberate about decisions.
+      You are a helpful and highly proficient AI agent. You use the `reasoning-graph`
+      MCP tools to map out your thinking and scrutinize decisions as needed.
     mcp_servers: ["reasoning-graph"]
 
 # MCP server configuration
