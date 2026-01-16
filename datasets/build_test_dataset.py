@@ -191,13 +191,13 @@ elif args.dataset_name == "MedQA":
         example = example["data"]
         query = example["Question"]
         query += " Choose the correct answer from the following options:"
-        for option in example["options"]:
+        for option in example["Options"]:
             query += f"\n({option['key']}) {option['value']}"
         return query
 
     def format_medqa_gt(example):
         example = example["data"]
-        answer = f"The correct answer is: ({example['answer_idx']}) {example['answer']}"
+        answer = f"The correct answer is: ({example['Correct Option']}) {example['Correct Answer']}"
         return answer
 
     data_list = [
