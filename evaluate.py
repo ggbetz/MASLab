@@ -1,5 +1,6 @@
 import argparse
 import asyncio
+import datetime
 import json
 import os
 import threading
@@ -115,7 +116,9 @@ async def main_async():
         help="Turn this on to run the evaluation sequentially.",
     )
     args = parser.parse_args()
-    setup_logging()
+    time = datetime.datetime.now().isoformat()
+    log_file = f"logs/inference_{args.test_dataset_name}_{args.method_name}_{args.model_name}_{time}.log"
+    setup_logging(log_file=log_file)
 
     general_config = vars(args)
 
