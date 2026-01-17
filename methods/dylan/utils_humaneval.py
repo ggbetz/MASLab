@@ -3,9 +3,11 @@ import ast
 import random
 from typing import Dict, List, Tuple, Any
 
+from loguru import logger
+
 # Constants
 CODE_THRESHOLD = 0.9
-TOOL_LIST = ['Passer']
+TOOL_LIST = ["Passer"]
 
 # Roles and system prompts
 ROLE_MAP = {
@@ -14,7 +16,7 @@ ROLE_MAP = {
     "ComputerScientist": "You are a computer scientist. You are good at writing high performance code and recognizing corner cases while solve real problems. You must respond with python code, no free-flowing text (unless in a comment). You will be given a function signature and its docstring by the user. Write your full implementation following the format (restate the function signature).",
     "Programmer": "You are an intelligent programmer. You must complete the python function given to you by the user. And you must follow the format they present when giving your answer! You can only respond with comments and actual code, no free-flowing text (unless in a comment).",
     "CodingArtist": "You are a coding artist. You write Python code that is not only functional but also aesthetically pleasing and creative. Your goal is to make the code an art form while maintaining its utility. You will be given a function signature and its docstring by the user. Write your full implementation following the format (restate the function signature).",
-    "SoftwareArchitect": "You are a software architect, skilled in designing and structuring code for scalability, maintainability, and robustness. Your responses should focus on best practices in software design. You will be given a function signature and its docstring by the user. Write your full implementation following the format (restate the function signature)."
+    "SoftwareArchitect": "You are a software architect, skilled in designing and structuring code for scalability, maintainability, and robustness. Your responses should focus on best practices in software design. You will be given a function signature and its docstring by the user. Write your full implementation following the format (restate the function signature).",
 }
 
 ROLE_MAP_INIT = {
@@ -23,7 +25,7 @@ ROLE_MAP_INIT = {
     "ComputerScientist": "You are a computer scientist. You are good at writing high performance code and recognizing corner cases while solve real problems. You must respond with python code, no free-flowing text (unless in a comment). You will be given a series of previous implementations of the same function signature. You use the previous implementations as a hint and your goal is to complete your full implementation with better accuracy and robustness. Remember to follow the format (restate the function signature). Here're some examples.",
     "Programmer": "You are an intelligent programmer. You will be given a series of previous implementations of the same function signature. You use the previous implementations as a hint and your goal is to complete your full implementation with better accuracy and robustness. And you must follow the format they present when giving your answer! You can only respond with comments and actual code, no free-flowing text (unless in a comment). Here're some examples.",
     "CodingArtist": "You are a coding artist. You write Python code that is not only functional but also aesthetically pleasing and creative. Your goal is to make the code an art form while maintaining its utility. You will be given a series of previous implementations of the same function signature. You use the previous implementations as a hint and your goal is to complete your full implementation with better accuracy and robustness. Remember to follow the format (restate the function signature). Here're some examples.",
-    "SoftwareArchitect": "You are a software architect, skilled in designing and structuring code for scalability, maintainability, and robustness. Your responses should focus on best practices in software design. You will be given a series of previous implementations of the same function signature. You use the previous implementations as a hint and your goal is to complete your full implementation with better accuracy and robustness. Remember to follow the format (restate the function signature). Here're some examples."
+    "SoftwareArchitect": "You are a software architect, skilled in designing and structuring code for scalability, maintainability, and robustness. Your responses should focus on best practices in software design. You will be given a series of previous implementations of the same function signature. You use the previous implementations as a hint and your goal is to complete your full implementation with better accuracy and robustness. Remember to follow the format (restate the function signature). Here're some examples.",
 }
 
 EXAMPLE_TESTER = """Example:
@@ -104,7 +106,7 @@ JUDGE_MAP = {
     "Reflector": f"You are a Python writing assistant. You will be given a series of function implementations of the same function signature. Write a few sentences to explain whether and why the implementations are wrong. These comments will be used as a hint and your goal is to write your thoughts on the n-th previous implementation after [reflection n]. Here's the example.\n{EXAMPLE_REFLECTOR}",
     "Ranker": "You are a Python writing assistant. You will be given a series of function implementations of the same function signature. You need to choose the best 2 implementations in consideration of correctness, efficiency, and possible corner cases.",
     "Debugger": "You are a debugger, specialized in finding and fixing bugs in Python code. You will be given a function implementation with a bug in it. Your goal is to identify the bug and provide a corrected implementation. Include comments to explain what was wrong and how it was fixed.",
-    "QualityManager": "You are a quality manager, ensuring that the code meets high standards in terms of readability, efficiency, and accuracy. You will be given a function implementation and you need to provide a code review. Comment on its correctness, efficiency, and readability, and suggest improvements if needed."
+    "QualityManager": "You are a quality manager, ensuring that the code meets high standards in terms of readability, efficiency, and accuracy. You will be given a function implementation and you need to provide a code review. Comment on its correctness, efficiency, and readability, and suggest improvements if needed.",
 }
 
 JUDGE_PREFIX = {
@@ -123,6 +125,7 @@ JUDGE_NAMES = {
     "QualityManager": "Quality Manager",
 }
 
+
 # Utility functions
 def extract_last_python_code_block(text):
     # The regular expression pattern for Python code blocks
@@ -136,6 +139,7 @@ def extract_last_python_code_block(text):
         return matches[-1].strip()
     else:
         return None
+
 
 def parse_code_completion(agent_response, question):
     python_code = extract_last_python_code_block(agent_response)
@@ -155,6 +159,7 @@ def parse_code_completion(agent_response, question):
         python_code = question + python_code
     return python_code
 
+
 def py_is_syntax_valid(code: str) -> bool:
     try:
         ast.parse(code)
@@ -162,10 +167,11 @@ def py_is_syntax_valid(code: str) -> bool:
     except Exception:
         return False
 
+
 def check_function_result(python_code: str, timeout: float = 5.0) -> Dict:
     """
     Evaluates the functional correctness of a completion by running the test
-    suite provided in the problem. 
+    suite provided in the problem.
     """
     try:
         # Simple syntax check
@@ -174,34 +180,50 @@ def check_function_result(python_code: str, timeout: float = 5.0) -> Dict:
     except Exception as e:
         return {"passed": False, "result": f"failed: {e}"}
 
+
 def parse_ranks(completion, max_num=4):
     if not isinstance(completion, str):
         content = completion["choices"][0]["message"]["content"]
     else:
         content = completion
-    pattern = r'\[([1234]),\s*([1234])\]'
-    matches = re.findall(pattern, content)
+
+    content = str(content).strip()
+    lines = content.splitlines()
+    segment = content
+    for line in reversed(lines):
+        if line.strip():
+            segment = line.strip()
+            break
+
+    pattern = r"\[?\s*(\d+)\s*,\s*(\d+)\s*\]?"
+    matches = re.findall(pattern, segment)
 
     try:
+        if not matches:
+            raise ValueError("No rank pattern found")
+
         match = matches[-1]
-        tops = [int(match[0])-1, int(match[1])-1]
+        tops = [int(match[0]) - 1, int(match[1]) - 1]
+
         def clip(x):
             if x < 0:
                 return 0
-            if x > max_num-1:
-                return max_num-1
+            if x > max_num - 1:
+                return max_num - 1
             return x
+
         tops = [clip(x) for x in tops]
-    except:
-        print("error in parsing ranks")
+    except Exception:
+        logger.error("error in parsing ranks; completion tail: {}", content[-200:])
         tops = random.sample(list(range(max_num)), 2)
 
     return tops
 
+
 def most_frequent(clist, cmp_func):
     if not clist:
         return None, 0
-        
+
     counter = 0
     num = clist[0]
 

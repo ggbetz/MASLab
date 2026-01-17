@@ -1,6 +1,8 @@
 import re
 import random
 
+from loguru import logger
+
 # Deprecated: SYSTEM_PROMPT_MMLU was previously used to build a
 # per-call system prompt in DyLAN MMLU. System behavior is now
 # defined in logical agent instructions in config_mmlu*.yaml.
@@ -25,11 +27,21 @@ ACTIVATION_MAP = {"listwise": 0, "trueskill": 1, "window": 2, "none": -1}
 
 
 def parse_ranks(completion, max_num=4):
-    content = completion
-    pattern = r"\[([1234567]),\s*([1234567])\]"
-    matches = re.findall(pattern, content)
+    content = str(completion).strip()
+    lines = content.splitlines()
+    segment = content
+    for line in reversed(lines):
+        if line.strip():
+            segment = line.strip()
+            break
+
+    pattern = r"\[?\s*(\d+)\s*,\s*(\d+)\s*\]?"
+    matches = re.findall(pattern, segment)
 
     try:
+        if not matches:
+            raise ValueError("No rank pattern found")
+
         match = matches[-1]
         tops = [int(match[0]) - 1, int(match[1]) - 1]
 
@@ -41,8 +53,8 @@ def parse_ranks(completion, max_num=4):
             return x
 
         tops = [clip(x) for x in tops]
-    except:
-        print("error in parsing ranks")
+    except Exception:
+        logger.error("error in parsing ranks; completion tail: {}", content[-200:])
         tops = random.sample(list(range(max_num)), 2)
 
     return tops

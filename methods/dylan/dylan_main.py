@@ -4,6 +4,7 @@ import re
 import os
 from typing import Callable, List, Tuple
 
+from loguru import logger
 from methods.mas_base import MAS
 
 
@@ -238,14 +239,25 @@ class DyLAN_Main(MAS):
 
     def _parse_ranks(self, completion, max_num=4):
         """Parse rank information from completion"""
-        pattern = r"\[([1234567]),\s*([1234567])\]"
-        matches = re.findall(pattern, completion)
+        content = str(completion).strip()
+        lines = content.splitlines()
+        segment = content
+        for line in reversed(lines):
+            if line.strip():
+                segment = line.strip()
+                break
+
+        pattern = r"\[?\s*(\d+)\s*,\s*(\d+)\s*\]?"
+        matches = re.findall(pattern, segment)
 
         try:
+            if not matches:
+                raise ValueError("No rank pattern found")
+
             match = matches[-1]
             tops = [int(match[0]) - 1, int(match[1]) - 1]
 
-            def clip(x):
+            def clip(x: int) -> int:
                 if x < 0:
                     return 0
                 if x > max_num - 1:
@@ -253,8 +265,8 @@ class DyLAN_Main(MAS):
                 return x
 
             tops = [clip(x) for x in tops]
-        except:
-            print("error in parsing ranks")
+        except Exception:
+            logger.error("error in parsing ranks; completion tail: {}", content[-200:])
             tops = random.sample(list(range(max_num)), 2)
 
         return tops
