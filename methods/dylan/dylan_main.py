@@ -1,10 +1,10 @@
 import math
 import random
 import re
-import os
 from typing import Callable, List, Tuple
 
 from loguru import logger
+
 from methods.mas_base import MAS
 
 
@@ -20,7 +20,7 @@ class DyLAN_Main(MAS):
         )
         """
         Initialize the DyLAN method.
-        
+
         Args:
             general_config: A dictionary containing the model configuration
             method_config_name: Name of the method configuration file
@@ -281,13 +281,13 @@ class DyLAN_Main(MAS):
             def convert(x):
                 try:
                     return int(x)
-                except:
+                except Exception:
                     return 0
 
             # Convert the string to a list of integers
             try:
                 ret = list(map(convert, last_match.split(",")))
-            except:
+            except Exception:
                 ret = []
             return ret
         else:
