@@ -1,6 +1,8 @@
 import json
 import re
 
+from loguru import logger
+
 from ..mas_base import MAS
 from .mad_prompt import (
     AFFIRMATIVE_PROMPT,
@@ -114,15 +116,18 @@ class MAD_Main(MAS):
         return dct.get(num, f"{num}th")
 
     def print_answer(self, debate_topic):
-        print("\n\n===== Debate Done! =====")
-        print("\n----- Debate Topic -----")
-        print(debate_topic)
-        print("\n----- Base Answer -----")
-        print(self.base_answer)
-        print("\n----- Debate Answer -----")
-        print(self.debate_answer)
-        print("\n----- Debate Reason -----")
-        print(self.config.get("Reason", "No reason provided."))
+        answer = (
+            f"===== Debate Done! =====\n"
+            f"----- Debate Topic -----\n"
+            f"{debate_topic}\n"
+            f"----- Base Answer -----"
+            f"{self.base_answer}"
+            f"\n----- Debate Answer -----"
+            f"{self.debate_answer}"
+            f"\n----- Debate Reason -----"
+            f"{self.config.get('Reason', 'No reason provided.')}"
+        )
+        logger.info(answer)
 
     async def inference(self, sample):
         """Inference function for MAD using async LLM calls."""

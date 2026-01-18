@@ -2,6 +2,8 @@ import math
 import re
 from typing import Dict, List, Tuple
 
+from loguru import logger
+
 from methods.mas_base import MAS
 
 from .utils_math import get_examples
@@ -191,7 +193,7 @@ class DyLAN_MATH(MAS):
                 return x
 
             tops = [clip(x) for x in tops]
-        except:
+        except Exception:
             tops = [0, 1]  # Default to first two agents if parsing fails
 
         return tops
@@ -348,7 +350,7 @@ class DyLAN_MATH(MAS):
                 else:
                     try:
                         assert len(substr) >= 2
-                    except:
+                    except Exception:
                         return string
                     a = substr[0]
                     b = substr[1]
@@ -381,7 +383,7 @@ class DyLAN_MATH(MAS):
             assert string == "{}/{}".format(a, b)
             new_string = "\\frac{" + str(a) + "}{" + str(b) + "}"
             return new_string
-        except:
+        except Exception:
             return string
 
     def _remove_right_units(self, string: str) -> str:
@@ -422,9 +424,9 @@ class DyLAN_MATH(MAS):
             ss1 = self._strip_string(str1)
             ss2 = self._strip_string(str2)
             if verbose:
-                print(ss1, ss2)
+                logger.debug(f"Checking for equivalence: {ss1}, {ss2}")
             return ss1 == ss2
-        except:
+        except Exception:
             return str1 == str2
 
     def _check_reach_consensus(

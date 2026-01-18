@@ -1,6 +1,7 @@
 import traceback
 
 import yaml
+from loguru import logger
 
 
 def load_config(config_path):
@@ -10,9 +11,12 @@ def load_config(config_path):
 
 
 def handle_retry_error(retry_state):
-    print("Retry failed")
+    err_msg = "Retry failed"
     if retry_state.outcome:
         exc = retry_state.outcome.exception()
-        print(f"Final exception after retries: {repr(exc)}")
-        traceback.print_exception(type(exc), exc, exc.__traceback__)
+        err_msg += (
+            f"Final exception after retries: {repr(exc)}. "
+            f"Traceback: {traceback.format_exception(type(exc), exc, exc.__traceback__)}"
+        )
+    logger.error(err_msg)
     return None
