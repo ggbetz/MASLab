@@ -31,7 +31,7 @@
 2. Install MCP server
 
 ```bash
-python3.11 -m venv .venv-cedrus
+uv run python -m venv .venv-cedrus
 source .venv-cedrus/bin/activate
 pip install git+https://github.com/<cedrus-org>/cedrus
 ```
