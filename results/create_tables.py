@@ -20,6 +20,12 @@ from pathlib import Path
 from typing import Optional
 
 import pandas as pd
+from loguru import logger
+
+from methods import method2class
+from utils.logging import setup_logging
+
+KNOWN_METHODS = set(method2class.keys())
 
 
 def load_eval_results(root: Path) -> pd.DataFrame:
@@ -34,7 +40,10 @@ def load_eval_results(root: Path) -> pd.DataFrame:
         <mas_method>_<eval_method>_eval.jsonl
         <mas_method>_<mas_config>_<eval_method>_eval.jsonl
 
-    where ``mas_config`` does not contain the underscore character ``"_"``.
+    where ``mas_method`` is matched against known method names from
+    ``methods.method2class`` and may contain underscores. Any remaining
+    segments between ``mas_method`` and ``eval_method`` are treated as
+    ``mas_config`` (which may also contain underscores or hyphens).
 
     Additional metadata columns are added to the resulting DataFrame:
 
@@ -67,27 +76,42 @@ def load_eval_results(root: Path) -> pd.DataFrame:
         stem = path.stem  # e.g. "cot_xverify_eval" or "cot_config-mcp_xverify_eval"
         parts = stem.split("_")
 
-        # Valid patterns:
-        #   [mas_method, eval_method, "eval"]
-        #   [mas_method, mas_config, eval_method, "eval"]
-        if not parts or parts[-1] != "eval":
+        # Require filenames of the form:
+        #   <mas_method>_<eval_method>_eval
+        #   <mas_method>_<mas_config>_<eval_method>_eval
+        # where <mas_method> is matched against known method names from
+        # methods.method2class (and may itself contain underscores).
+        if len(parts) < 3 or parts[-1] != "eval":
             # Not an eval file in the expected naming scheme
             continue
 
-        mas_method: Optional[str]
-        mas_config: Optional[str]
-        eval_method: str
+        eval_method = parts[-2]
+        prefix_parts = parts[:-2]  # everything before eval_method + "eval"
+        if not prefix_parts:
+            # No method prefix at all
+            logger.warning("Skipping eval file with no method prefix: {}", path)
+            continue
 
-        if len(parts) == 3:
-            mas_method = parts[0]
-            eval_method = parts[1]
-            mas_config = None  # default / implicit config
-        elif len(parts) == 4:
-            mas_method = parts[0]
-            mas_config = parts[1]
-            eval_method = parts[2]
-        else:
-            # More segments than expected; skip for now
+        mas_method: Optional[str] = None
+        mas_config: Optional[str] = None
+
+        # Find the longest prefix that matches a known method name
+        for i in range(len(prefix_parts), 0, -1):
+            candidate = "_".join(prefix_parts[:i])
+            if candidate in KNOWN_METHODS:
+                mas_method = candidate
+                remaining = prefix_parts[i:]
+                if remaining:
+                    mas_config = "_".join(remaining)
+                break
+
+        if mas_method is None:
+            # No known method prefix in this filename; skip and log a warning.
+            logger.warning(
+                "Skipping eval file with unknown MAS method in filename '{}': {}",
+                stem,
+                path,
+            )
             continue
 
         # Read this JSONL file
@@ -307,6 +331,7 @@ def build_arg_parser() -> argparse.ArgumentParser:
 def main(argv: Optional[list[str]] = None) -> None:
     parser = build_arg_parser()
     args = parser.parse_args(argv)
+    setup_logging()
 
     if args.command == "markdown":
         command_markdown(args)
