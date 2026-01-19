@@ -123,7 +123,8 @@ def load_eval_results(root: Path) -> pd.DataFrame:
         # Read this JSONL file
         df = pd.read_json(path, lines=True)
 
-        # Extract flat token statistics, defaulting to 0 when missing
+        # Extract flat token statistics, defaulting to 0 when missing.
+        # Support both legacy "token_stats" and current "stats" keys.
         stats_columns = [
             "num_llm_calls",
             "prompt_tokens",
@@ -131,7 +132,13 @@ def load_eval_results(root: Path) -> pd.DataFrame:
             "num_tool_calls",
         ]
 
+        stats_field: Optional[str] = None
         if "token_stats" in df.columns:
+            stats_field = "token_stats"
+        elif "stats" in df.columns:
+            stats_field = "stats"
+
+        if stats_field is not None:
 
             def _extract_token_stats(cell):
                 base = {k: 0 for k in stats_columns}
@@ -152,9 +159,9 @@ def load_eval_results(root: Path) -> pd.DataFrame:
                                 base[key] = int(val)
                 return pd.Series(base)
 
-            stats_df = df["token_stats"].apply(_extract_token_stats)
+            stats_df = df[stats_field].apply(_extract_token_stats)
         else:
-            # No token_stats column at all; fill zeros
+            # No stats column at all; fill zeros
             stats_df = pd.DataFrame(0, index=df.index, columns=stats_columns)
 
         df = pd.concat([df, stats_df], axis=1)
