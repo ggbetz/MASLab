@@ -220,8 +220,36 @@ def build_by_run_table(df: pd.DataFrame) -> pd.DataFrame:
             acc[f"mean_{col}"] = grouped[col].mean()
 
     agg = acc.reset_index()
+    agg = agg.rename(columns=lambda c: c[5:] if c.startswith("mean_") else c)
 
     return agg
+
+
+def _format_for_markdown(df: pd.DataFrame) -> pd.DataFrame:
+    """Apply column-specific numeric formatting for Markdown output."""
+    formatted = df.copy()
+
+    # prompt_tokens / completion_tokens: integer (0 decimals)
+    for col in ["prompt_tokens", "completion_tokens"]:
+        if col in formatted.columns:
+            formatted[col] = formatted[col].map(
+                lambda x: "" if pd.isna(x) else f"{int(round(x))}"
+            )
+
+    # num_llm_calls / num_tool_calls: 1 decimal
+    for col in ["num_llm_calls", "num_tool_calls"]:
+        if col in formatted.columns:
+            formatted[col] = formatted[col].map(
+                lambda x: "" if pd.isna(x) else f"{x:.1f}"
+            )
+
+    # score: 3 decimals
+    if "score" in formatted.columns:
+        formatted["score"] = formatted["score"].map(
+            lambda x: "" if pd.isna(x) else f"{x:.3f}"
+        )
+
+    return formatted
 
 
 def format_markdown_by_dataset_model(
@@ -265,9 +293,13 @@ def format_markdown_by_dataset_model(
 
         display = sub.drop(columns=drop_cols, errors="ignore")
 
+        # Apply column-specific numeric formatting for Markdown
+        display = _format_for_markdown(display)
+
         lines.append(f"### {dataset} / {model}{n_label}")
         lines.append("")
         lines.append(display.to_markdown(index=False))
+
         lines.append("")
 
     return "\n".join(lines).rstrip() + "\n"
