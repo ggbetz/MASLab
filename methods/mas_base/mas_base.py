@@ -5,8 +5,8 @@ from contextvars import ContextVar
 from typing import cast
 
 # Suppress MCP server verbose logging
-os.environ.setdefault("MCP_LOG_LEVEL", "ERROR")
-os.environ.setdefault("FASTMCP_LOG_LEVEL", "ERROR")
+os.environ.setdefault("MCP_LOG_LEVEL", "WARNING")
+os.environ.setdefault("FASTMCP_LOG_LEVEL", "WARNING")
 
 # OpenAI Agents SDK imports
 from agents import (
@@ -81,7 +81,7 @@ class MAS:
         logger.debug(
             f"Using model identifier: {self.model_name} ({self.api_model_identifier})"
         )
-        logger.debug("MCP server logging suppressed (MCP_LOG_LEVEL=ERROR)")
+        logger.debug("MCP server logging suppressed (MCP_LOG_LEVEL=WARNING)")
 
         self.client = AsyncOpenAI(base_url=primary_base_url, api_key=primary_api_key)
 
