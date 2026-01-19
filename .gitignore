@@ -5,6 +5,7 @@ opencode.json*
 datasets/data
 
 results/*
+!results/create_tables.py
 
 *nopush*
 
