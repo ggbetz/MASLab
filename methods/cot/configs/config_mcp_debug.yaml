@@ -1,0 +1,17 @@
+# methods/cot/configs/config_mcp.yaml
+
+# New logical agent configuration
+logical_agents:
+  default:
+    # Optional but recommended: make instructions explicit
+    instructions: >
+      You are a helpful chain-of-thought reasoner. You ALWAYS use the `reasoning-graph`
+      MCP tools to map out your thinking and scrutinize decisions.
+    mcp_servers: ["reasoning-graph"]
+
+# MCP server configuration
+mcp_servers:
+  reasoning-graph:
+    type: "stdio"
+    command: ".venv-cedrus/bin/python"
+    args: ["-m", "cedrus"]
